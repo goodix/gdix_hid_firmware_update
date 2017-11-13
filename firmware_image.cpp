@@ -89,9 +89,9 @@ int FirmwareImage::Initialize(const char *filename)
 			m_pid[j++] = m_firmwareData[FW_IMAGE_PID_OFFSET + i];
 
 	m_firmwareVersionMajor = (m_firmwareData[FW_IMAGE_VID_OFFSET] >> 4) * 10
-				+ m_firmwareData[FW_IMAGE_VID_OFFSET] & 0x0F;
+				+ (m_firmwareData[FW_IMAGE_VID_OFFSET] & 0x0F);
 	m_firmwareVersionMinor = (m_firmwareData[FW_IMAGE_VID_OFFSET + 1] >> 4) * 10
-				+ m_firmwareData[FW_IMAGE_VID_OFFSET + 1] & 0x0F;
+				+ (m_firmwareData[FW_IMAGE_VID_OFFSET + 1] & 0x0F);
 	//memcpy(m_pid, &m_firmwareData[FW_IMAGE_PID_OFFSET], sizeof(m_pid));
 	m_initialized = true;
 	close(fw_fd);
