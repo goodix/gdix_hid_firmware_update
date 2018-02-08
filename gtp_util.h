@@ -20,8 +20,8 @@
 #define E_HID_PKG_INDEX 500
 #define E_HID_PKG_LEN	501
 
-#define GDIX_UPDATE_DEBUG
-#define GDIX_DBG_ARRY
+//#define GDIX_UPDATE_DEBUG
+//#define GDIX_DBG_ARRY
 
 #define gdix_info(fmt, arg...)  fprintf(stdout, "[GDIX_INFO][%s:%d]" fmt, __func__, __LINE__, ##arg)
 #define gdix_err(fmt, arg...)  fprintf(stderr, "[GDIX_ERROR][%s:%d]" fmt, __func__, __LINE__, ##arg)

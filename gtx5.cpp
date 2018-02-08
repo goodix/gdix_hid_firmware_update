@@ -35,12 +35,11 @@
 #include "gtp_util.h"
 #include "gtx5.h"
 
-
 GTx5Device::GTx5Device()
 {
         m_firmwareVersionMajor = 0;
 	m_firmwareVersionMinor = 0;
-        m_sensorID = 16; // > 15 invalid ID 
+        m_sensorID = 16; /* > 15 invalid ID */
         memset(m_pid, 0, sizeof(m_pid));
         m_hidDevType = HID_MACHINE;
         m_deviceOpen = false;
@@ -112,14 +111,14 @@ int GTx5Device::GetReport(unsigned char reportId, unsigned char *buf)
 	rcv_buf[0] = reportId;
 	ret = ioctl(m_fd, HIDIOCGFEATURE(m_inputReportSize), rcv_buf);
 	if (ret < 0) {
-		gdix_err("failed get feature retry, ret=%d\n", ret);
+		gdix_dbg("failed get feature retry, ret=%d\n", ret);
 		return ret;
 	} else {
 		if (rcv_buf[0] == reportId) {
 			memcpy(buf, rcv_buf, 65);
 			return 0;
 		} else {
-			gdix_err("Get Wrong reportId:id=0x%x\n", rcv_buf[0]);
+			gdix_dbg("Get Wrong reportId:id=0x%x\n", rcv_buf[0]);
 			return -1;
 		}
 	}
@@ -135,7 +134,8 @@ int GTx5Device::Read(unsigned short addr, unsigned char *buf, unsigned int len)
 	unsigned int read_data_len = 0;
 
 re_start:
-	
+	pkg_index = 0;
+	read_data_len = 0;
 	HidBuf[0] = 0x0e;
 	HidBuf[1] = _I2C_DIRECT_RW;
 	HidBuf[2] = 0;
@@ -148,46 +148,49 @@ re_start:
 	HidBuf[8] = (len >> 8) & 0xff;
 	HidBuf[9] = len & 0xff;
 
-
 	ret = Write(HidBuf, 10);
 	if (ret < 0) {
-		gdix_err("Failed send read start package, ret = %d\n", ret);
+		gdix_dbg("Failed send read start package, ret = %d\n", ret);
 		return -1;
 	}
 
 	do {
-		usleep(30);
 		ret = GetReport(0x0e, HidBuf);
 		if (ret) {
-			gdix_err("Failed read addr=0x%x, len=%d\n", addr, len);
+			gdix_dbg("Failed read addr=0x%x, len=%d\n", addr, len);
 			break;
 		} else {
 			if (pkg_index != HidBuf[3]) {
-				if (retry++ < GDIX_RETRY_TIMES + 2) {
-					gdix_dbg("Read retry,pkg_index(%d) != HidBuf[3](%d) %d\n", retry,
-							pkg_index, HidBuf[3]);
+				if (retry++ < GDIX_RETRY_TIMES) {
+					gdix_dbg("Read retry %d, pkg_index %d != HidBuf[3](%d)\n",
+						 retry,	pkg_index, HidBuf[3]);
 					usleep(1000);
 					goto re_start;
 				}
 				ret = -E_HID_PKG_INDEX;
 				break;
 			} else {
-				if (HidBuf[4] <= len - read_data_len) {
+				if (HidBuf[4] == len - read_data_len) {
 					memcpy(buf + read_data_len, &HidBuf[5], HidBuf[4]);
 					read_data_len += HidBuf[4];
-					gdix_dbg("read_len = %d, hidbuf[4] = %d\n",
-							read_data_len, HidBuf[4]);
 					pkg_index++;
 				} else {
-					gdix_dbg("Data length err: %d > %d\n", 
-						HidBuf[4], len - read_data_len);
+					gdix_dbg("Data length err: %d != %d\n", 
+						 HidBuf[4], len - read_data_len);
 					gdix_dbg_array(HidBuf,6);
+
+					if (retry++ < GDIX_RETRY_TIMES) {
+						gdix_dbg("Read retry: %d\n", retry);
+						usleep(1000);
+						goto re_start;
+					}
+
 					ret = -E_HID_PKG_LEN;
 					break;
 				}
 			}
 		}
-	} while (read_data_len != len);
+	} while (read_data_len != len && (retry < GDIX_RETRY_TIMES));
 
 	if (ret < 0)
 		return ret;
@@ -202,7 +205,7 @@ int GTx5Device::Write(unsigned short addr, const unsigned char *buf,
 	unsigned short current_addr = addr;
 	unsigned int pos = 0, transfer_length = 0;
 	bool has_follow_pkg = false;
-	unsigned int pkg_num = 0;
+	unsigned char pkg_num = 0;
 	int ret = 0;
 
 	while (pos != len) {
@@ -216,13 +219,13 @@ int GTx5Device::Write(unsigned short addr, const unsigned char *buf,
 		}
 
 		if (has_follow_pkg)
-			tmpBuf[2] = 0x01; // set follow-up package flag
+			tmpBuf[2] = 0x01; /* set follow-up package flag */
 		else
 			tmpBuf[2] = 0x00;
-		tmpBuf[3] = pkg_num++; // set pack num
-		/* set HID package length = data_len + GDIX_DATA_HEAD_LEN*/
+		tmpBuf[3] = pkg_num++; /* set pack num */
+		/* set HID package length = data_len + GDIX_DATA_HEAD_LEN */
 		tmpBuf[4] = (unsigned char)(transfer_length + GDIX_DATA_HEAD_LEN);
-		tmpBuf[5] = 0;		//write operation flag
+		tmpBuf[5] = 0;		/* write operation flag */
 		tmpBuf[6] = (current_addr >> 8) & 0xff;
 		tmpBuf[7] = current_addr & 0xff;
 		tmpBuf[8] = (unsigned char)((transfer_length >> 8) & 0xff);
@@ -289,7 +292,6 @@ int GTx5Device::Write(const unsigned char *buf,
 int GTx5Device::SetBasicProperties()
 {
 	int ret;
-        /* set device info manully for debug use */
 	unsigned char fw_info[12] = {0};
         m_firmwareVersionMajor = 20;
 	m_firmwareVersionMinor = 20;
@@ -303,13 +305,10 @@ int GTx5Device::SetBasicProperties()
 	
 	do {
 		ret = Read(GTX5_VERSION_ADDR, fw_info, sizeof(fw_info));
-		if (ret < 0) {
-			gdix_err("Failed read VERSION, retry=%d\n", retry);
-			//return -1;
-		} else {
+		if (ret < 0)
+			gdix_dbg("Failed read VERSION, retry=%d\n", retry);
+		else
 			break;
-		}
-
 	} while (--retry);
 
 	if (!retry)
@@ -320,7 +319,6 @@ int GTx5Device::SetBasicProperties()
 	m_sensorID = fw_info[10] & 0x0F;
 
 	m_firmwareVersionMajor = (fw_info[5] >> 4) * 10 + (fw_info[5] & 0x0F);
-	
 	m_firmwareVersionMinor = (fw_info[6] >> 4) * 10 + (fw_info[6] & 0x0F);
 
         return 0;  

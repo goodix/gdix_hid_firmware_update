@@ -1,8 +1,6 @@
 CXX ?= g++
-CPPFLAGS += -I./include
-#CXXFLAGS += -Wall
 
-#LDFLAGS += -L.
+CXXFLAGS += -Wall
 
 UPDATESRC = main.cpp gtx5.cpp firmware_image.cpp
 UPDATEOBJ = $(UPDATESRC:.cpp=.o)

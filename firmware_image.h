@@ -24,6 +24,7 @@
 #define FW_IMAGE_VID_OFFSET 23
 
 #define FW_IMAGE_SUB_FWNUM_OFFSET 26
+
 class FirmwareImage
 {
 public:
@@ -45,7 +46,7 @@ public:
 	~FirmwareImage() { Close(); }
 private:
 	bool m_initialized;
-	unsigned int m_firmwareSize;
+	int m_firmwareSize;
 	unsigned char m_pid[8];
 	int m_firmwareVersionMajor; 
 	int m_firmwareVersionMinor; 

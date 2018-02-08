@@ -23,7 +23,6 @@
 #define HID_ARM				0
 #define HID_MACHINE			1
 
-//======Protocol define===================================================
 #define _STOP_READ_ALL			0
 #define _STOP_READ                      0
 #define _READ_COORD                     1
@@ -38,16 +37,13 @@
 #define _I2C_DIRECT_RW			0x20
 #define _I2C_INDIRECT_READ		0x21
 
-#define _I2C_RAM_MONITOR		13		//Monitor data
-#define _I2C_RAM_MONITOR_TRIGER		14		//Monitor data
-
 #define HID_GDIX_REPORT_ID		0
 #define GDIX_ATTN_REPORT_ID		0x0c
 #define GDIX_READ_DATA_REPORT_ID	0x0b
 
 #define GDIX_PRE_HEAD_LEN		5
 #define GDIX_DATA_HEAD_LEN		5
-#define GDIX_RETRY_TIMES		5
+#define GDIX_RETRY_TIMES		6
 
 #define GTX5_VERSION_ADDR		0x8240
 
@@ -81,8 +77,8 @@ private:
         int m_sensorID;
         unsigned char m_pid[GTP_PRODUCT_ID_LENGTH + 1];
         int m_hidDevType;
-	int m_inputReportSize;
-	int m_outputReportSize;
+	unsigned int m_inputReportSize;
+	unsigned int m_outputReportSize;
 
         unsigned char *m_inputReport;
 	unsigned char *m_outputReport;

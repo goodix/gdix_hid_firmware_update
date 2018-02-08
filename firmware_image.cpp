@@ -35,13 +35,15 @@ FirmwareImage::FirmwareImage()
 	m_firmwareData = NULL;
 }
 
-
 int FirmwareImage::Initialize(const char *filename)
 {
+
+
+
 	int ret, i, j;
 	int fw_fd;
 	unsigned short check_sum = 0;
-	unsigned int data_len;
+	int data_len;
 
 	fw_fd = open(filename, O_RDONLY);
 
@@ -84,7 +86,7 @@ int FirmwareImage::Initialize(const char *filename)
 	}
 
 	/* get PID VID */
-	for (i = 0, j = 0; i < sizeof(m_pid); i++)
+	for (i = 0, j = 0; i < (int)sizeof(m_pid); i++)
 		if (m_firmwareData[FW_IMAGE_PID_OFFSET + i] != 0)
 			m_pid[j++] = m_firmwareData[FW_IMAGE_PID_OFFSET + i];
 

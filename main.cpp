@@ -28,27 +28,27 @@
 #include <string>
 #include <sstream>
 #include <linux/hidraw.h>
-#include <linux/hid.h>
 
 #include "gtp_util.h"
 #include "gtx5.h"
 #include "firmware_image.h"
 
+#define RAM_BUFFER_SIZE	    4096
 #define GOODIX_FLASH_BUFFER 0xDE24
 
 #define GTPUPDATE_GETOPTS	"hfd:pv"
 
 #define VERSION_MAJOR		1
-#define VERSION_MINOR		2
-#define VERSION_SUBMINOR	8
+#define VERSION_MINOR		4
+#define VERSION_SUBMINOR	4
 
 void printHelp(const char *prog_name)
 {
 	fprintf(stdout, "Usage: %s [OPTIONS] FIRMWAREFILE\n", prog_name);
 	fprintf(stdout, "\t-h, --help\tPrint this message\n");
-	fprintf(stdout, "\t-f, --force\tForce updating firmware even it the image provided is older\n\t\t\tthen the current firmware on the device.\n");
+	fprintf(stdout, "\t-f, --force\tForce updating firmware with check PID and VID\n");
 	fprintf(stdout, "\t-d, --device\thidraw device file associated with the device being updated.\n");
-	fprintf(stdout, "\t-p, --fw-props\tPrint the firmware properties.\n");
+	fprintf(stdout, "\t-p, --fw-props\tPrint the firmware properties, format like PID 7589:VID 1.1.\n");
 	fprintf(stdout, "\t-v, --version\tPrint version number.\n");
 }
 
@@ -70,9 +70,8 @@ int GetFirmwareProps(const char *deviceName, char *props_buf, int len)
 	}
 
 	snprintf(props_buf, len, "%d.%d",
-			gtx5_dev.GetFirmwareVersionMajor(),
-			gtx5_dev.GetFirmwareVersionMinor());
-
+		 gtx5_dev.GetFirmwareVersionMajor(),
+		 gtx5_dev.GetFirmwareVersionMinor());
 	return 0;
 }
 
@@ -81,6 +80,9 @@ int check_update(GTx5Device &dev, FirmwareImage &fw_image)
 	int ret;
 	int active_vid;
 	int firmware_vid;
+
+	gdix_dbg("dev PID is %s, image PID is %s\n",
+		 dev.GetProductID(), fw_image.GetProductID());
 
 	/* compare PID */
 	ret = memcmp(dev.GetProductID(), fw_image.GetProductID(), 4);
@@ -91,9 +93,10 @@ int check_update(GTx5Device &dev, FirmwareImage &fw_image)
 			dev.GetFirmwareVersionMinor();
 	firmware_vid = fw_image.GetFirmwareVersionMajor() * 100 +
 			fw_image.GetFirmwareVersionMinor();
-
+	
+	gdix_dbg("dev VID: %d, image VID:%d\n", active_vid, firmware_vid);	
 	/* compare VID */
-	if (active_vid != firmware_vid)
+	if (active_vid < firmware_vid)
 		return 0;
 	else
 		return -2;
@@ -102,8 +105,9 @@ int check_update(GTx5Device &dev, FirmwareImage &fw_image)
 int load_sub_firmware(GTx5Device &dev, unsigned int flash_addr,
 			unsigned char *fw_data, unsigned int len)
 {
-	int ret, i;
+	int ret;
 	int retry;
+	unsigned int i;
 	unsigned int unitlen = 0;
 	unsigned char temp_buf[65] = {0};
 	unsigned int load_data_len = 0;
@@ -111,11 +115,13 @@ int load_sub_firmware(GTx5Device &dev, unsigned int flash_addr,
 	unsigned short check_sum = 0;
 	int retry_load = 0;
 
-	while (load_data_len != len) {
-		unitlen = (len - load_data_len > 4096) ? 4096 : (len - load_data_len);
+	while (retry_load < GDIX_RETRY_TIMES && load_data_len != len) {
+		unitlen = (len - load_data_len > RAM_BUFFER_SIZE) ?
+			  RAM_BUFFER_SIZE : (len - load_data_len);
 		ret = dev.Write(GOODIX_FLASH_BUFFER, &fw_data[load_data_len], unitlen);
 		if (ret < 0) {
-			gdix_err("Failed load fw: %d\n", ret);
+			gdix_err("Failed load fw, len %d : addr 0x%x, ret=%d\n",
+				 unitlen, flash_addr, ret);
 			goto load_fail;
 		}
 
@@ -138,14 +144,12 @@ int load_sub_firmware(GTx5Device &dev, unsigned int flash_addr,
 		}
 		
 		usleep(80000);
-		retry = GDIX_RETRY_TIMES + 3;
+		retry = 100;
 		do {
 			memset(temp_buf, 0, sizeof(temp_buf));
 			ret = dev.Read(0x5096, temp_buf, 1);
-			if (ret < 0) {
+			if (ret < 0)
 				gdix_dbg("Failed read 0x5096, ret=%d\n", ret);
-				goto load_fail;
-			}
 			if (temp_buf[0] == 0xAA)
 				break;
 			
@@ -154,19 +158,18 @@ int load_sub_firmware(GTx5Device &dev, unsigned int flash_addr,
 
 		if (!retry) {
 			gdix_dbg("Read back 0x5096(0x%x) != 0xAA\n", temp_buf[0]);
-			if (retry_load++ > 3) {
-				ret = -1;
-				goto load_fail;
-			}
-
 			gdix_dbg("Reload(%d) subFW:addr:0x%x\n",retry_load, flash_addr);
+			/* firmware chechsum err */
+			retry_load++;
+			ret = -1;
 		} else {
 			load_data_len += unitlen;
 			flash_addr += unitlen;
 			retry_load = 0;
+			ret = 0;
 		}
 	}
-	ret = 0;
+
 load_fail:
 	return ret;
 }
@@ -229,7 +232,7 @@ int fw_update(GTx5Device &dev, FirmwareImage &fw_image)
 			temp_buf[i] = 0x55;
 		ret = dev.Write(GOODIX_FLASH_BUFFER, temp_buf, 5) ;
 		if (ret < 0) {
-			gdix_err("Failed write 0x55 to GOODIX_FLASH_BUFFER, ret=%d\n", ret);
+			gdix_err("Failed write flash buffer, ret=%d\n", ret);
 			goto update_err;
 		}
 
@@ -248,7 +251,7 @@ int fw_update(GTx5Device &dev, FirmwareImage &fw_image)
 	} while (--retry);
 
 	if (!retry) {
-		gdix_err("Compare GOODIX_FLASH_BUFFER with 0x55 Failed\n");
+		gdix_err("Flash buffer clear failed\n");
 		ret = -3;
 		goto update_err;
 	}
@@ -272,25 +275,17 @@ int fw_update(GTx5Device &dev, FirmwareImage &fw_image)
 			     (fw_data[sub_fw_info_pos + 3] << 8) | 
 			     fw_data[sub_fw_info_pos + 4];
 		
-		//sub_fw_len = (fw_data[sub_fw_info_pos + 1] << 8) |
-		//	     (fw_data[sub_fw_info_pos + 2]);
-		//sub_fw_len *= 256;
-
 		sub_fw_flash_addr = (fw_data[sub_fw_info_pos + 5] << 8) |
 				    fw_data[sub_fw_info_pos + 6];
-		//sub_fw_flash_addr *= 256;
 
 		if (sub_fw_type != 0x02) {
-			gdix_info("Sub firmware type does not math:type=%d\n", sub_fw_type);
+			gdix_info("Sub firmware type does not math:type=%d\n",
+				  sub_fw_type);
 			fw_image_offset += sub_fw_len;
 			sub_fw_info_pos += 8;
 			continue;
 		}
 
-		gdix_dbg("Found a valid sub subsystem start loading\n");
-
-		gdix_dbg("Sub FW addr=0x%x, len=%d\n", sub_fw_flash_addr,
-			  sub_fw_len);
 		ret = load_sub_firmware(dev, sub_fw_flash_addr,
 					&fw_data[fw_image_offset], sub_fw_len);
 		if (ret < 0) {
@@ -299,20 +294,18 @@ int fw_update(GTx5Device &dev, FirmwareImage &fw_image)
 		}
 
 		/* reset IC */
-		ret = dev.Write(buf_restart, sizeof(buf_restart));
-		if (ret < 0)
-			gdix_info("Failed write restart command, ret=%d\n", ret);
-	
+		retry = 3;
+		do {
+			ret = dev.Write(buf_restart, sizeof(buf_restart));
+			if (ret < 0)
+				gdix_dbg("Failed write restart command, ret=%d\n", ret);
+			usleep(20000);
+		} while(--retry);
 		usleep(300000);
-		/*ret = dev.Read(0x8240, temp_buf, 16);
-		if (ret < 0) {
-			gdix_dbg("Failed read 0x8240\n");
-		}
-		gdix_dbg_array(temp_buf, 16);*/
-
+	
 		return 0;
 	}
-	ret = -5; // No suitable system found
+	ret = -5; /* No valid firmware data found */
 update_err:
 	return ret;
 }
@@ -365,11 +358,11 @@ int main(int argc, char **argv)
 		char props_buf[60] = {0};
 		ret = GetFirmwareProps(deviceName, props_buf, sizeof(props_buf));
 		if (ret) {
-			fprintf(stderr, "Failed to read properties from device %s\n",
-					deviceName);
+			printf("Failed to read properties from device %s\n",
+				 deviceName);
 			return 1;
 		} else {
-			fprintf(stdout, "%s\n", props_buf);
+			printf("%s\n", props_buf);
 			return 0;
 		}
 	}
@@ -401,17 +394,18 @@ int main(int argc, char **argv)
 		}
 	}
 
+	retry = 0;
 	do {
 		ret = fw_update(gtx5_dev, fw_image);
 		if (ret) {
-			gdix_dbg("Update failed, retry=%d\n", retry);
+			gdix_dbg("Update failed\n");
 			usleep(200000);
 		} else {
-			/*usleep(300000);*/
+			usleep(300000);
 			gdix_dbg("Update success\n");
 			return 0;
 		}
-	} while (retry++ < 8);
+	} while (retry++ < 3);
 	gdix_err("Firmware update err:ret=%d\n", ret);
 	return -4;
 }
