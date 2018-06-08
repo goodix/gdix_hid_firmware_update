@@ -2,7 +2,7 @@ CXX ?= g++
 
 CXXFLAGS += -Wall
 
-UPDATESRC = main.cpp gtx5.cpp firmware_image.cpp
+UPDATESRC = main.cpp gtx2.cpp gtx5.cpp firmware_image.cpp
 UPDATEOBJ = $(UPDATESRC:.cpp=.o)
 PROGNAME = gdixupdate
 

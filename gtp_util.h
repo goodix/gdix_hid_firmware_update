@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#ifndef _GT_UTIL_H_
+#ifndef _GT_UTIL_H_ 
 #define _GT_UTIL_H_
 
 #define E_HID_PKG_INDEX 500
@@ -23,8 +23,13 @@
 //#define GDIX_UPDATE_DEBUG
 //#define GDIX_DBG_ARRY
 
+#ifdef GDIX_UPDATE_DEBUG
 #define gdix_info(fmt, arg...)  fprintf(stdout, "[GDIX_INFO][%s:%d]" fmt, __func__, __LINE__, ##arg)
 #define gdix_err(fmt, arg...)  fprintf(stderr, "[GDIX_ERROR][%s:%d]" fmt, __func__, __LINE__, ##arg)
+#else
+#define gdix_info(fmt, arg...) do{}while(0)
+#define gdix_err(fmt, arg...) do{}while(0)
+#endif
 
 #ifdef GDIX_UPDATE_DEBUG
 #define gdix_dbg(fmt, arg...)  fprintf(stdout, "[GDIX_DEBUG][%s:%d]" fmt, __func__, __LINE__, ##arg)
