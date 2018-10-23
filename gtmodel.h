@@ -18,14 +18,15 @@
 #define _GTMODEL_H_
 
 #include <string>
-//Template class
+
 class GTmodel
 {
 public:
-    GTmodel(){}
+    GTmodel(){};
+    virtual ~GTmodel(){};
 
     virtual int Open(const char *filename){return 0;}
-
+    virtual bool IsOpened(){return m_deviceOpen;}
     virtual int Read(unsigned short addr, unsigned char *buf, unsigned int len){return 0;}
     virtual int GetReport(unsigned char reportId, unsigned char *buf){return 0;}
 
@@ -39,9 +40,10 @@ public:
     virtual int QueryBasicProperties(){return 0;}
     virtual int SetBasicProperties(){return 0;}
     virtual void Close(){return;}
-
     virtual int GetFd() { return 0; }
-    virtual ~GTmodel(){}
+    
+protected:
+    bool m_deviceOpen;
 };
 
 #endif

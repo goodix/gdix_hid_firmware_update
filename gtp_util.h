@@ -16,11 +16,11 @@
 
 #ifndef _GT_UTIL_H_ 
 #define _GT_UTIL_H_
-
+#include <stdio.h>
 #define E_HID_PKG_INDEX 500
 #define E_HID_PKG_LEN	501
 
-//#define GDIX_UPDATE_DEBUG
+#define GDIX_UPDATE_DEBUG
 //#define GDIX_DBG_ARRY
 
 #ifdef GDIX_UPDATE_DEBUG

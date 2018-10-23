@@ -22,6 +22,8 @@
 #include <unistd.h>
 #include <errno.h>
 
+
+
 #include "gtp_util.h"
 #include "firmware_image.h"
 
@@ -37,9 +39,31 @@ FirmwareImage::FirmwareImage()
 
 int FirmwareImage::Initialize(const char *filename)
 {
+	gdix_dbg("FirmwareImage %s run\n",__func__);
+	m_initialized = false;
+	if(GetDataFromFile(filename) < 0){
+		m_initialized = false;
+		goto err_out;
+	}
 
+	if(InitPid() < 0){
+		gdix_dbg("init pid failed\n");
+		m_initialized = false;
+		goto err_out;
+	}
 
-
+	if(InitVid() < 0){
+		gdix_dbg("init fw version failed\n");
+		m_initialized = false;
+		goto err_out;
+	}
+	m_initialized = true;
+	gdix_dbg("%s exit\n",__func__);
+	return 0;
+err_out:
+	m_initialized = false;
+	return -1;
+	/*
 	int ret, i, j;
 	int fw_fd;
 	unsigned short check_sum = 0;
@@ -84,8 +108,10 @@ int FirmwareImage::Initialize(const char *filename)
 		ret = -3;
 		goto err_out;
 	}
+	*/
 
 	/* get PID VID */
+	/*
 	for (i = 0, j = 0; i < (int)sizeof(m_pid); i++)
 		if (m_firmwareData[FW_IMAGE_PID_OFFSET + i] != 0)
 			m_pid[j++] = m_firmwareData[FW_IMAGE_PID_OFFSET + i];
@@ -105,7 +131,86 @@ err_out:
 	delete[] m_firmwareData;
 	close(fw_fd);
 	return ret;
+	*/
 }
+
+int FirmwareImage::GetDataFromFile(const char* filename){
+	gdix_dbg("FirmwareImage %s run\n",__func__);
+
+	int ret, i;
+	int fw_fd;
+	unsigned short check_sum = 0;
+	int data_len;
+
+	fw_fd = open(filename, O_RDONLY);
+
+	if (fw_fd < 0){
+		perror("Cannot open file\n");
+		gdix_err("file:%s, ret:%d\n", filename, fw_fd);
+		return fw_fd;
+	}
+
+	m_firmwareSize = lseek(fw_fd, 0, SEEK_END);
+	lseek(fw_fd, 0, SEEK_SET);
+
+	if(NULL != m_firmwareData){
+		delete []m_firmwareData;
+		m_firmwareData = NULL;
+	}
+	m_firmwareData = new unsigned char[m_firmwareSize]();
+
+	ret = read(fw_fd, m_firmwareData, m_firmwareSize);
+	if (ret != m_firmwareSize) {
+		gdix_dbg("Failed read file: %s, ret=%d\n",
+			filename, ret);
+		ret = -1;
+		goto err_out;
+	} 
+
+	for (i = 6, check_sum = 0; i < m_firmwareSize; i++)
+		check_sum += m_firmwareData[i];
+
+	if (check_sum != (m_firmwareData[4] << 8 | m_firmwareData[5])) {
+		gdix_dbg("Check_sum err  0x%x != 0x%x\n",
+			check_sum, (m_firmwareData[4] << 8 | m_firmwareData[5]));
+		ret = -2;
+		goto err_out;
+	}
+
+	data_len = m_firmwareData[0] << 24 | m_firmwareData[1] << 16 |
+			m_firmwareData[2] << 8 | m_firmwareData[3];
+	if (data_len + 6 !=  m_firmwareSize) {
+		gdix_dbg("Check file len failed %d != %d\n",
+			data_len + 6, m_firmwareSize);
+		ret = -3;
+		goto err_out;
+	}
+	close(fw_fd);
+	gdix_dbg("FirmwareImage %s exit,exit code:%d\n",__func__,0);
+	return 0;
+
+err_out:
+	m_initialized = false;
+	delete[] m_firmwareData;
+	close(fw_fd);
+	gdix_dbg("FirmwareImage %s exit,exit code:%d\n",__func__,ret);
+	return ret;	
+}
+
+int FirmwareImage::InitPid(){
+	gdix_dbg("FirmwareImage %s run\n",__func__);
+	m_pid[0] = '\0';
+	gdix_dbg("FirmwareImage %s exit\n",__func__);
+	return -1;
+}
+int FirmwareImage::InitVid(){
+	gdix_dbg("FirmwareImage %s run\n",__func__);
+	m_firmwareVersionMajor = 0;
+	m_firmwareVersionMinor = 0;
+	gdix_dbg("FirmwareImage %s exit\n",__func__);
+	return -1;
+}
+
 
 void FirmwareImage::Close()
 {
@@ -113,5 +218,8 @@ void FirmwareImage::Close()
 		return;
 
 	m_initialized = false;
-	delete[] m_firmwareData;
+	if(NULL != m_firmwareData){
+		delete []m_firmwareData;
+		m_firmwareData = NULL;
+	}
 }

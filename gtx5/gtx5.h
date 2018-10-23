@@ -17,7 +17,7 @@
  #define _GTX5_H_
 
  #include <string>
- #include "gtmodel.h"
+ #include "../gtmodel.h"
  
  #define GTP_PRODUCT_ID_LENGTH		6
  #define HID_ARM				0
@@ -59,10 +59,9 @@
     int SetBasicProperties();
     void Close();
     int GetFd() { return m_fd; }
-    ~GTx5Device(){} 
- private:
+    virtual ~GTx5Device(){} 
+ protected:
     int m_fd;
-    bool m_deviceOpen;
     int m_firmwareVersionMajor;
     int m_firmwareVersionMinor;
     int m_sensorID;

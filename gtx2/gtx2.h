@@ -18,8 +18,9 @@
 #define _GTX2_H_
 
 #include <string>
-#include "gtmodel.h"
+#include "../gtx5/gtx5.h"
 
+/*
 #define GTP_PRODUCT_ID_LENGTH		6
 #define HID_ARM				0
 #define HID_MACHINE			1
@@ -46,44 +47,16 @@
 #define GDIX_DATA_HEAD_LEN		5
 #define GDIX_RETRY_TIMES		6
 
+
+*/
+
 #define GTX2_VERSION_ADDR		0x8140
 
-class GTx2Device : public GTmodel
+class GTx2Device : public GTx5Device
 {
 public:
-    GTx2Device();
-    int Open(const char *filename);
-    int Read(unsigned short addr, unsigned char *buf, unsigned int len);
-    int GetReport(unsigned char reportId, unsigned char *buf);
-
-    int Write(unsigned short addr, const unsigned char *buf, unsigned int len);
-    int Write(const unsigned char *buf, unsigned int len);
-
-    int GetFirmwareProps(const char *deviceName, char *props_buf, int len);
-    int GetFirmwareVersionMajor() { return m_firmwareVersionMajor; }
-    int GetFirmwareVersionMinor() { return m_firmwareVersionMinor; }
-    unsigned char *GetProductID() { return m_pid; }
     int QueryBasicProperties(){ return 0; };
     int SetBasicProperties();
-    void Close();
-
-    int GetFd() { return m_fd; }
-    ~GTx2Device(){}
-private:
-    int m_fd;
-    bool m_deviceOpen;
-    int m_firmwareVersionMajor;
-    int m_firmwareVersionMinor;
-    int m_sensorID;
-    unsigned char m_pid[GTP_PRODUCT_ID_LENGTH + 1];
-    int m_hidDevType;
-    unsigned int m_inputReportSize;
-    unsigned int m_outputReportSize;
-
-    unsigned char *m_inputReport;
-    unsigned char *m_outputReport;
-
-    bool m_bCancel;
-
+    virtual ~GTx2Device(){}
 };
 #endif

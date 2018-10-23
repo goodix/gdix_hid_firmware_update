@@ -29,11 +29,12 @@
  #include <signal.h>
  #include <stdlib.h>
  #include <sys/inotify.h>
- #include "gtp_util.h"
+ #include "../gtp_util.h"
  #include "gtx5.h"
+
  GTx5Device::GTx5Device()
  {
-         m_firmwareVersionMajor = 0;
+    m_firmwareVersionMajor = 0;
      m_firmwareVersionMinor = 0;
          m_sensorID = 16; /* > 15 invalid ID */
          memset(m_pid, 0, sizeof(m_pid));
@@ -88,6 +89,8 @@
          Close();
      return rc;
  }
+
+
  void GTx5Device::Close()
  {
          if (!m_deviceOpen)
@@ -258,7 +261,7 @@
                  gdix_dbg("Operation beCancled or m_fd closed\n");
                  break;
              }
-             gdix_dbg("failed set feature, retry: ret=%d\n", ret);
+             gdix_dbg("failed set feature, retry: ret=%d,retry:%d\n", ret,retry);
              usleep(10000);
          } else {
              break;
@@ -266,6 +269,7 @@
          } while(--retry);
          return ret;
  }
+ 
  int GTx5Device::SetBasicProperties()
  {
      int ret;
