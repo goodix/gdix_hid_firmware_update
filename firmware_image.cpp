@@ -31,6 +31,9 @@ FirmwareImage::FirmwareImage()
 {
 	m_initialized = false;
 	m_firmwareSize = 0;
+	m_configSize = 0;
+	m_totalSize = 0;
+	hasConfig = false;
 	memset(m_pid, 0, sizeof(m_pid));
 	m_firmwareVersionMajor = 0;
 	m_firmwareVersionMinor = 0;
@@ -140,7 +143,6 @@ int FirmwareImage::GetDataFromFile(const char* filename){
 	int ret, i;
 	int fw_fd;
 	unsigned short check_sum = 0;
-	int data_len;
 
 	fw_fd = open(filename, O_RDONLY);
 
@@ -150,24 +152,35 @@ int FirmwareImage::GetDataFromFile(const char* filename){
 		return fw_fd;
 	}
 
-	m_firmwareSize = lseek(fw_fd, 0, SEEK_END);
+	m_totalSize = lseek(fw_fd, 0, SEEK_END);
 	lseek(fw_fd, 0, SEEK_SET);
 
 	if(NULL != m_firmwareData){
 		delete []m_firmwareData;
 		m_firmwareData = NULL;
 	}
-	m_firmwareData = new unsigned char[m_firmwareSize]();
+	m_firmwareData = new unsigned char[m_totalSize]();
 
-	ret = read(fw_fd, m_firmwareData, m_firmwareSize);
-	if (ret != m_firmwareSize) {
+	ret = read(fw_fd, m_firmwareData, m_totalSize);
+	if (ret != m_totalSize) {
 		gdix_dbg("Failed read file: %s, ret=%d\n",
 			filename, ret);
 		ret = -1;
 		goto err_out;
 	} 
 
-	for (i = 6, check_sum = 0; i < m_firmwareSize; i++)
+	//firmware
+	m_firmwareSize = m_firmwareData[0] << 24 | m_firmwareData[1] << 16 |
+			m_firmwareData[2] << 8 | m_firmwareData[3];
+
+	if (m_firmwareSize + 6 !=  m_totalSize) {
+		gdix_dbg("Check file len unequal %d != %d\n",
+			m_firmwareSize + 6, m_totalSize);
+		gdix_dbg("This bin file may contain a config bin.\n");
+		hasConfig = true;
+	}
+
+	for (i = 6, check_sum = 0; i < m_firmwareSize+6; i++)
 		check_sum += m_firmwareData[i];
 
 	if (check_sum != (m_firmwareData[4] << 8 | m_firmwareData[5])) {
@@ -177,14 +190,27 @@ int FirmwareImage::GetDataFromFile(const char* filename){
 		goto err_out;
 	}
 
-	data_len = m_firmwareData[0] << 24 | m_firmwareData[1] << 16 |
-			m_firmwareData[2] << 8 | m_firmwareData[3];
-	if (data_len + 6 !=  m_firmwareSize) {
-		gdix_dbg("Check file len failed %d != %d\n",
-			data_len + 6, m_firmwareSize);
-		ret = -3;
-		goto err_out;
+	//config
+	if(hasConfig)
+	{
+		int cfgpackLen = (m_firmwareData[m_firmwareSize+6]<<8)+m_firmwareData[m_firmwareSize+7];
+		if(m_totalSize-m_firmwareSize-6 != cfgpackLen+6)
+		{
+			gdix_err("config pack len error,%d != %d",m_totalSize-m_firmwareSize-6, cfgpackLen+6);
+			ret = -3;
+			goto err_out;
+		}
+
+		for (i = m_firmwareSize+6+6, check_sum = 0; i < m_totalSize; i++)
+			check_sum += m_firmwareData[i];
+		if(check_sum != (m_firmwareData[m_firmwareSize+6+4]<<8) + m_firmwareData[m_firmwareSize+6+5])
+		{
+			gdix_err("config pack checksum error,%d != %d",check_sum, (m_firmwareData[m_firmwareSize+6+4]<<8) + m_firmwareData[m_firmwareSize+6+5]);
+			ret = -4;
+			goto err_out;
+		}
 	}
+
 	close(fw_fd);
 	gdix_dbg("FirmwareImage %s exit,exit code:%d\n",__func__,0);
 	return 0;
@@ -209,6 +235,42 @@ int FirmwareImage::InitVid(){
 	m_firmwareVersionMinor = 0;
 	gdix_dbg("FirmwareImage %s exit\n",__func__);
 	return -1;
+}
+
+int FirmwareImage::GetConfigSubCfgNum()
+{
+	if(hasConfig)
+	{
+		return m_firmwareData[m_firmwareSize+6+3];
+	}
+	return -1;
+}
+
+int FirmwareImage::GetConfigSubCfgInfoOffset()
+{
+	if(hasConfig)
+	{
+		return m_firmwareSize+6+6;
+	}
+	return -1;
+}
+
+int FirmwareImage::GetConfigSubCfgDataOffset()
+{
+	if(hasConfig)
+	{
+		return m_firmwareSize+6+64;
+	}
+	return -1;
+}
+
+updateFlag FirmwareImage::GetUpdateFlag()
+{
+	if(hasConfig)
+	{
+		return (updateFlag)(m_firmwareData[m_firmwareSize+6+3]&0x03);
+	}
+	return none;
 }
 
 

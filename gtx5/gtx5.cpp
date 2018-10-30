@@ -146,6 +146,7 @@
      HidBuf[8] = (len >> 8) & 0xff;
      HidBuf[9] = len & 0xff;
      ret = Write(HidBuf, 10);
+
      if (ret < 0) {
          gdix_dbg("Failed send read start package, ret = %d\n", ret);
          return -1;
@@ -299,3 +300,4 @@
      m_firmwareVersionMinor = (fw_info[6] >> 4) * 10 + (fw_info[6] & 0x0F);
          return 0;  
  }
+

@@ -28,6 +28,9 @@
 */
 #include <cstddef>
 
+//update type
+enum updateFlag {none = 0,firmware=1,config=2};
+
 class FirmwareImage
 {
 public:
@@ -50,7 +53,12 @@ public:
 	virtual int GetFirmwareSubFwNum(){return 0;}
 	virtual int GetFirmwareSubFwInfoOffset(){return 0;}
 	virtual int GetFirmwareSubFwDataOffset(){return 0;}
+	virtual int GetConfigSubCfgNum();
+	virtual int GetConfigSubCfgInfoOffset();
+	virtual int GetConfigSubCfgDataOffset();
 	virtual bool IsOpened(){return m_initialized;}
+	virtual bool HasConfig(){return hasConfig;}
+	virtual updateFlag GetUpdateFlag();
 protected:
 	virtual int GetDataFromFile(const char* filename);
 	virtual int InitPid();
@@ -58,12 +66,17 @@ protected:
 
 protected:
 	bool m_initialized;
+	int m_totalSize;
 	int m_firmwareSize;
+	int m_configSize;
+	bool hasConfig;
 	unsigned char m_pid[8];
 	int m_firmwareVersionMajor; 
 	int m_firmwareVersionMinor; 
 	unsigned char *m_firmwareData;
 };
+
+
 #endif
 
 

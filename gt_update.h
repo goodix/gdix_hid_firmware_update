@@ -25,6 +25,7 @@ protected:
     virtual int load_sub_firmware(unsigned int flash_addr,
 			unsigned char *fw_data, unsigned int len){return -1;}; 
     virtual int fw_update(unsigned int firmware_flag){return -1;};
+    virtual int cfg_update(){return -1;}
 };
 
 typedef struct{

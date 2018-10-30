@@ -31,8 +31,8 @@
  {
      int ret;
      unsigned char fw_info[12] = {0};
-         m_firmwareVersionMajor = 20;
-     m_firmwareVersionMinor = 20;
+    m_firmwareVersionMajor = 20;
+    m_firmwareVersionMinor = 20;
          m_sensorID = 2;
      int retry = 10;
      if (!m_deviceOpen) {
@@ -46,14 +46,24 @@
          else
              break;
      } while (--retry);
+     gdix_dbg("Fw_info array\n");
+     gdix_dbg("0x%02x,0x%02x,0x%02x,0x%02x,0x%02x\n",fw_info[0],fw_info[1],fw_info[2],fw_info[3],fw_info[4]);
+     gdix_dbg("0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x\n",fw_info[5],fw_info[6],fw_info[7],fw_info[8],fw_info[9],fw_info[10]);
      if (!retry)
          return -1;
      memcpy(m_pid, fw_info, 4);
      m_pid[4] = '\0';
+     gdix_dbg("PID = %s\n",m_pid);
      m_sensorID = fw_info[10] & 0x0F;
-     m_firmwareVersionMajor = (fw_info[5] >> 4) * 10 + (fw_info[5] & 0x0F);
-     m_firmwareVersionMinor = (fw_info[6] >> 4) * 10 + (fw_info[6] & 0x0F);
-         return 0;  
+
+    gdix_dbg("sensorID = %d\n",m_sensorID);
+
+    m_firmwareVersionMajor = (fw_info[5] >> 4) * 10 + (fw_info[5] & 0x0F);
+    m_firmwareVersionMinor = (fw_info[6] >> 4) * 10 + (fw_info[6] & 0x0F);
+
+    gdix_dbg("Version = %d.%d\n",m_firmwareVersionMajor,m_firmwareVersionMinor);
+
+    return 0;  
  }
 
  

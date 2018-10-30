@@ -44,6 +44,7 @@ int GTx2Device::SetBasicProperties()
         m_firmwareVersionMajor = 20;
 	m_firmwareVersionMinor = 20;
         m_sensorID = 2;
+	unsigned char cfg_ver = 0;
 	int retry = 10;
 
 	if (!m_deviceOpen) {
@@ -52,6 +53,12 @@ int GTx2Device::SetBasicProperties()
 	}
 	
 	do {
+		ret = Read(0x8050,&cfg_ver,1);
+		if(ret < 0){
+			gdix_dbg("Failed read cfg VERSION, retry=%d\n", retry);
+			continue;
+		}
+
 		ret = Read(0x8140, fw_info, sizeof(fw_info));
 		if (ret < 0)
 			gdix_dbg("Failed read VERSION, retry=%d\n", retry);
@@ -65,12 +72,15 @@ int GTx2Device::SetBasicProperties()
 	memcpy(m_pid, fw_info, 4);
 	m_pid[4] = '\0';
 	gdix_dbg("pid:%s\n",m_pid);
-	m_sensorID = 16;
+	m_sensorID = fw_info[10]&0x0f;
+	gdix_dbg("sensorID:%d\n",m_sensorID);
 
 	m_firmwareVersionMajor = fw_info[4];
-	m_firmwareVersionMinor = ((fw_info[5] << 8) | (fw_info[6])) ;
+	m_firmwareVersionMinor = ((fw_info[5] << 16) | (fw_info[6])<<8) | cfg_ver;
 
 	gdix_dbg("version:0x%x,0x%x\n",m_firmwareVersionMajor,m_firmwareVersionMinor);
 
     return 0;  
 }
+
+

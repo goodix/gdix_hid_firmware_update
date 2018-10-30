@@ -32,11 +32,12 @@ public:
     virtual int Run(void* para);
     virtual ~GTx2Update();
 
+
 protected:
     virtual int load_sub_firmware(unsigned int flash_addr,
 			unsigned char *fw_data, unsigned int len); 
     virtual int fw_update(unsigned int firmware_flag);
-
+    virtual int cfg_update();
 };
 
 

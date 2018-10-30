@@ -74,6 +74,15 @@ void printVersion()
 		VERSION_MAJOR, VERSION_MINOR, VERSION_SUBMINOR);
 }
 
+void lowercase_str(unsigned char* str)
+{
+	unsigned char* ptr = str;
+	while(*ptr){
+		*ptr = tolower(*ptr);
+		ptr++;
+	}
+}
+
 int main(int argc, char **argv)
 {
 	int ret = 0;
@@ -125,6 +134,7 @@ int main(int argc, char **argv)
 				printVersion();
 				return 0;
 			case 't':
+				lowercase_str((unsigned char*)optarg);
 				pid = optarg;
 				gdix_dbg("pid is %s\n",pid);
 				break;
@@ -200,7 +210,7 @@ int main(int argc, char **argv)
 		gt_model = new GTx3Device;
 		fw_image = new GTX3FirmwareImage;
 		gt_update = new GTx3Update;
-		firmware_flag = 0x44;//update type:0x02,0x03,0x03,0x10;
+		firmware_flag = 0x844;//update type:0x02,0x03,0x03,0x10;
 	}
 	else
 	{

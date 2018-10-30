@@ -37,6 +37,9 @@
 #include "gtx2.h"
 #include "gtx2_firmware_image.h"
 
+//cfg addr
+#define CFG_FLASH_ADDR 0x3e000
+
 GTx2Update::GTx2Update()
 {
     
@@ -53,12 +56,22 @@ int GTx2Update::Run(void *para)
 {
     int ret = 0;
     int retry = 0;
+	updateFlag flag = none;
     if(!m_Initialized){
         gdix_err("Can't Process Update Before Initialized.\n");
         return -1;
     }
     //get all parameter
     pGTUpdatePara parameter = (pGTUpdatePara)para;
+
+	//check if the image has config
+	if(image->HasConfig()){
+		flag = image->GetUpdateFlag();
+	}
+	else{
+		//default for firmware
+		flag = firmware;
+	}
 
     if(!parameter->force)
     {
@@ -69,20 +82,47 @@ int GTx2Update::Run(void *para)
 		}
     }
 
-    retry = 0;
-	do {
-		ret = fw_update(parameter->firmwareFalg);
-		if (ret) {
-			gdix_dbg("Update failed\n");
-			usleep(200000);
-		} else {
-			usleep(300000);
-			gdix_dbg("Update success\n");
-            return 0;
+	if(flag & firmware){
+		retry = 0;
+		do {
+			ret = fw_update(parameter->firmwareFalg);
+			if (ret) {
+				gdix_dbg("Update failed\n");
+				usleep(200000);
+			} else {
+				usleep(300000);
+				gdix_dbg("Update success\n");
+				break;
+			}
+		} while (retry++ < 3);
+		if(ret){
+			gdix_err("Firmware update err:ret=%d\n", ret);
+			return ret;
 		}
-	} while (retry++ < 3);
-    gdix_err("Firmware update err:ret=%d\n", ret);
-    return -4;
+	}
+
+	//before go forward,Set Basic Properties to refresh SensorID
+	dev->SetBasicProperties();
+
+	if(flag & config){
+		retry = 0;
+		do {
+			ret = cfg_update();
+			if (ret) {
+				gdix_dbg("Update cfg failed\n");
+				usleep(200000);
+			} else {
+				usleep(300000);
+				gdix_dbg("Update cfg success\n");
+				break;
+			}
+		} while (retry++ < 3);
+		if(ret){
+			gdix_err("config update err:ret=%d\n", ret);
+			return ret;
+		}
+	}
+    return 0;
 }
 
 int GTx2Update::load_sub_firmware(unsigned int flash_addr,unsigned char *fw_data, unsigned int len)
@@ -262,6 +302,100 @@ int GTx2Update::fw_update(unsigned int firmware_flag)
 	usleep(300000);
 	return 0;
 	ret = -5; /* No valid firmware data found */
+update_err:
+	return ret;
+}
+
+int GTx2Update::cfg_update()
+{
+	int retry;
+	int ret, i;
+	unsigned char temp_buf[65];
+	unsigned char *fw_data = NULL;
+	unsigned char cfg_ver_after;
+	unsigned char cfg_ver_before;
+	unsigned char cfg_ver_infile;
+	bool findMatchCfg = false;
+	unsigned char* cfg0x8050 = NULL;//2 frame of config in memory
+	unsigned char* cfg0xBF7B = NULL;
+
+	int sub_cfg_num = image->GetConfigSubCfgNum();
+	unsigned char sub_cfg_id;
+	unsigned int sub_cfg_len;
+	unsigned int sub_cfg_info_pos = image->GetConfigSubCfgInfoOffset();
+	unsigned int cfg_offset = image->GetConfigSubCfgDataOffset();
+
+	//before update config,read curr config version
+	dev->Read(0x8050,temp_buf,1);
+	cfg_ver_before = temp_buf[0];
+	gdix_dbg("Before update,cfg version is %d\n",cfg_ver_before);
+	
+
+	/* Start load config */
+	fw_data = image->GetFirmwareData();
+	if (!fw_data) {
+		gdix_err("No valid fw data \n");
+		ret = -4;
+		goto update_err;
+	}
+
+	//fw_data[FW_IMAGE_SUB_FWNUM_OFFSET];
+	gdix_dbg("load sub config, sub_cfg_num=%d\n", sub_cfg_num);
+	for (i = 0; i < sub_cfg_num; i++) {
+		sub_cfg_id = fw_data[sub_cfg_info_pos];
+		gdix_dbg("load sub config, sub_cfg_id=0x%x\n", sub_cfg_id);
+
+		sub_cfg_len = (fw_data[sub_cfg_info_pos + 1] << 8) | 
+			       fw_data[sub_cfg_info_pos + 2];
+		
+		if(dev->GetSensorID() == sub_cfg_id){
+			findMatchCfg = true;
+			cfg0x8050 = &fw_data[cfg_offset];
+			cfg0xBF7B = &cfg0x8050[0x813f-0x8050];
+			cfg_ver_infile = cfg0x8050[0];
+			gdix_info("Find a cfg match sensorID:ID=%d,cfg version=%d\n",
+				  dev->GetSensorID(),cfg_ver_infile);
+			break;
+		}
+		cfg_offset += sub_cfg_len;
+		sub_cfg_info_pos += 3;
+	}
+	if(sub_cfg_num == 0)
+		return -5;
+	if(findMatchCfg)
+	{
+		retry = 3;
+		do{
+			usleep(5000);
+			//start download cfg
+			ret = dev->Write(0xBF7B,cfg0xBF7B,0xBFFA-0xBF7B+1);
+			if(ret<0){
+				gdix_err("Failed to Write cfg to cfg0xBF7B\n");
+				continue;
+			}
+			ret = dev->Write(0x8050,cfg0x8050,0x813F-0x8050+1);//cfg start addr = 0x8050
+			if(ret<0){
+				gdix_err("Failed to Write cfg to 0x8050\n");
+				continue;
+			}
+			break;
+			
+		}while(retry-->0);
+	}
+	usleep(1000000);
+
+	dev->Read(0x8050,temp_buf,1);
+	cfg_ver_after = temp_buf[0];
+	gdix_dbg("After update,cfg version is %d\n",cfg_ver_after);
+
+	if(cfg_ver_after != cfg_ver_infile){
+		gdix_dbg("After update,cfg version is no equal to cg version in file.\n");
+		ret = -1;
+		goto update_err;
+	}
+	return 0;
+
+	
 update_err:
 	return ret;
 }

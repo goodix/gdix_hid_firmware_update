@@ -55,6 +55,7 @@
     int GetFirmwareVersionMajor() { return m_firmwareVersionMajor; }
     int GetFirmwareVersionMinor() { return m_firmwareVersionMinor; }
     unsigned char *GetProductID() { return m_pid; }
+    unsigned char GetSensorID(){return m_sensorID;}
     int QueryBasicProperties(){return 0;};
     int SetBasicProperties();
     void Close();

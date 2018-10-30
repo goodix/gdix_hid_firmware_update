@@ -37,7 +37,6 @@ int GTX2FirmwareImage::InitPid(){
 
     if(!m_firmwareData){
         goto exit;
-
     }
        
 

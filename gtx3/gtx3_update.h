@@ -30,6 +30,7 @@ public:
 
 protected:
     virtual int fw_update(unsigned int firmware_flag);
+    virtual int cfg_update();
 };
 
 
