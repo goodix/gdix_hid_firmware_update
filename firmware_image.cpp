@@ -268,7 +268,7 @@ updateFlag FirmwareImage::GetUpdateFlag()
 {
 	if(hasConfig)
 	{
-		return (updateFlag)(m_firmwareData[m_firmwareSize+6+3]&0x03);
+		return (updateFlag)(m_firmwareData[m_firmwareSize+6+2]&0x03);
 	}
 	return none;
 }

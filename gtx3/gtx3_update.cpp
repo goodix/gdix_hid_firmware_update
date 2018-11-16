@@ -168,6 +168,11 @@ int GTx3Update::cfg_update()
 	unsigned char buf_switch_to_patch[] = {0x00, 0x10, 0x00, 0x00, 0x01, 0x01};
 	unsigned char buf_start_update[] = {0x00, 0x11, 0x00, 0x00, 0x01, 0x01};
 	unsigned char buf_restart[] = {0x0E, 0x13, 0x00, 0x00, 0x01, 0x01};
+	unsigned char cfg_ver_after[3];
+	unsigned char cfg_ver_before[3];
+	unsigned char cfg_ver_infile;
+	bool findMatchCfg = false;
+	unsigned char* cfg = NULL;
 
 	int sub_cfg_num = image->GetConfigSubCfgNum();
 	unsigned char sub_cfg_id;
@@ -175,43 +180,15 @@ int GTx3Update::cfg_update()
 	unsigned int sub_cfg_info_pos = image->GetConfigSubCfgInfoOffset();
 	unsigned int cfg_offset = image->GetConfigSubCfgDataOffset();
 
+	//before update config,read curr config version
+	dev->Read(0x8050,cfg_ver_before,3);
+	gdix_dbg("Before update,cfg version is 0x%02x 0x%02x 0x%02x\n",
+		cfg_ver_before[0],cfg_ver_before[1],cfg_ver_before[2]);
+	unsigned char cks = cfg_ver_before[0]+cfg_ver_before[1]+cfg_ver_before[2];
+	if(cks != 0)
+		gdix_err("Warning : cfg before cks err!\n");
 
-	ret = dev->Write(buf_switch_to_patch, sizeof(buf_switch_to_patch)) ;
-	if (ret < 0) {
-		gdix_err("Failed switch to patch\n");
-		return ret;
-	}
-	
-	usleep(250000);
-	retry = GDIX_RETRY_TIMES;
-	do {
-		ret = dev->Read(BL_STATE_ADDR, temp_buf, 1);
-		gdix_dbg("BL_STATE_ADDR\n");
-		if (ret < 0) {
-			gdix_err("Failed read 0x%x, ret = %d\n", BL_STATE_ADDR, ret);
-			goto update_err;
-		} 
-		if (temp_buf[0] == 0xDD)
-			break;
-		gdix_info("0x%x value is 0x%x != 0xDD, retry\n", BL_STATE_ADDR, temp_buf[0]);
-		usleep(30000);
-	} while (--retry);
-
-	if (!retry) {
-		gdix_err("Reg 0x%x != 0xDD\n", BL_STATE_ADDR);
-		ret = -2;
-		goto update_err;
-	}
-
-	/* Start update */
-	ret = dev->Write(buf_start_update, sizeof(buf_start_update)) ;
-	if (ret < 0) {
-		gdix_err("Failed start update, ret=%d\n", ret);
-		goto update_err;
-	}
-	usleep(100000);
-
-	/* Start load firmware */
+	/* Start load config */
 	fw_data = image->GetFirmwareData();
 	if (!fw_data) {
 		gdix_err("No valid fw data \n");
@@ -228,35 +205,84 @@ int GTx3Update::cfg_update()
 		sub_cfg_len = (fw_data[sub_cfg_info_pos + 1] << 8) | 
 			       fw_data[sub_cfg_info_pos + 2];
 		
-		
 		if(dev->GetSensorID() == sub_cfg_id){
-			gdix_info("Find a cfg match sensorID:ID=%d\n",
-				  dev->GetSensorID());
-			//start load cfg
-			ret = load_sub_firmware(CFG_FLASH_ADDR,&fw_data[cfg_offset], sub_cfg_len);
+			findMatchCfg = true;
+			cfg = &fw_data[cfg_offset];
+			cfg_ver_infile = cfg[0];
+			gdix_info("Find a cfg match sensorID:ID=%d,cfg version=%d\n",
+				  dev->GetSensorID(),cfg_ver_infile);
 			break;
-		}
-		if (ret < 0) {
-			gdix_dbg("Failed load sub firmware, ret=%d\n", ret);
-			goto update_err;
 		}
 		cfg_offset += sub_cfg_len;
 		sub_cfg_info_pos += 3;
 	}
+
 	if(sub_cfg_num == 0)
 		return -5;
-	/* reset IC */
-	gdix_dbg("reset ic\n");
-	retry = 3;
-	do {
-		ret = dev->Write(buf_restart, sizeof(buf_restart));
-		if (ret < 0)
-			gdix_dbg("Failed write restart command, ret=%d\n", ret);
-		usleep(20000);
-	} while(--retry);
-	usleep(300000);
-	return 0;
-	ret = -5; /* No valid firmware data found */
+	if(findMatchCfg)
+	{
+		ret = dev->Write(buf_switch_to_patch, sizeof(buf_switch_to_patch)) ;
+		if (ret < 0) {
+			gdix_err("Failed switch to patch\n");
+			return ret;
+		}
+		
+		usleep(250000);
+		retry = GDIX_RETRY_TIMES;
+		do {
+			ret = dev->Read(BL_STATE_ADDR, temp_buf, 1);
+			gdix_dbg("BL_STATE_ADDR\n");
+			if (ret < 0) {
+				gdix_err("Failed read 0x%x, ret = %d\n", BL_STATE_ADDR, ret);
+				goto update_err;
+			} 
+			if (temp_buf[0] == 0xDD)
+				break;
+			gdix_info("0x%x value is 0x%x != 0xDD, retry\n", BL_STATE_ADDR, temp_buf[0]);
+			usleep(30000);
+		} while (--retry);
+
+		if (!retry) {
+			gdix_err("Reg 0x%x != 0xDD\n", BL_STATE_ADDR);
+			ret = -2;
+			goto update_err;
+		}
+
+		/* Start update */
+		ret = dev->Write(buf_start_update, sizeof(buf_start_update)) ;
+		if (ret < 0) {
+			gdix_err("Failed start update, ret=%d\n", ret);
+			goto update_err;
+		}
+		usleep(100000);
+
+		//start load cfg
+		ret = load_sub_firmware(CFG_FLASH_ADDR,&fw_data[cfg_offset], sub_cfg_len);
+
+		/* reset IC */
+		gdix_dbg("reset ic\n");
+		retry = 3;
+		do {
+			ret = dev->Write(buf_restart, sizeof(buf_restart));
+			if (ret < 0)
+				gdix_dbg("Failed write restart command, ret=%d\n", ret);
+			usleep(20000);
+		} while(--retry);
+		usleep(300000);
+
+		//before update config,read curr config version
+		dev->Read(0x8050,cfg_ver_after,3);
+		gdix_dbg("After update,cfg version is 0x%02x 0x%02x 0x%02x\n",
+			cfg_ver_after[0],cfg_ver_after[1],cfg_ver_after[2]);
+		unsigned char cks = cfg_ver_after[0]+cfg_ver_after[1]+cfg_ver_after[2];
+		if(cks != 0)
+		{	
+			gdix_err("Error : cfg after cks err!\n");
+			return -6;
+		}
+
+		return 0;
+	}
 update_err:
 	return ret;
 }

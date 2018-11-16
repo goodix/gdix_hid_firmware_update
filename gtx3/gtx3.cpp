@@ -33,13 +33,20 @@
      unsigned char fw_info[12] = {0};
     m_firmwareVersionMajor = 20;
     m_firmwareVersionMinor = 20;
-         m_sensorID = 2;
+    m_sensorID = 2;
+    unsigned char cfg_ver = 0;
      int retry = 10;
      if (!m_deviceOpen) {
          gdix_err("Please open device first\n");
          return -1;
      }
      do {
+        ret = Read(0x8050,&cfg_ver,1);
+		if(ret < 0){
+			gdix_dbg("Failed read cfg VERSION, retry=%d\n", retry);
+			continue;
+		}
+        gdix_dbg("cfg ver:%d\n",cfg_ver);
          ret = Read(0x8240, fw_info, sizeof(fw_info));
          if (ret < 0)
              gdix_dbg("Failed read VERSION, retry=%d\n", retry);
@@ -51,17 +58,17 @@
      gdix_dbg("0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x\n",fw_info[5],fw_info[6],fw_info[7],fw_info[8],fw_info[9],fw_info[10]);
      if (!retry)
          return -1;
-     memcpy(m_pid, fw_info, 4);
-     m_pid[4] = '\0';
-     gdix_dbg("PID = %s\n",m_pid);
-     m_sensorID = fw_info[10] & 0x0F;
+     
+    memcpy(m_pid, fw_info, 4);
+	m_pid[4] = '\0';
+	gdix_dbg("pid:%s\n",m_pid);
+	m_sensorID = fw_info[10]&0x0f;
+	gdix_dbg("sensorID:%d\n",m_sensorID);
 
-    gdix_dbg("sensorID = %d\n",m_sensorID);
+	m_firmwareVersionMajor = fw_info[4];
+	m_firmwareVersionMinor = ((fw_info[5] << 16) | (fw_info[6])<<8) | cfg_ver;
 
-    m_firmwareVersionMajor = (fw_info[5] >> 4) * 10 + (fw_info[5] & 0x0F);
-    m_firmwareVersionMinor = (fw_info[6] >> 4) * 10 + (fw_info[6] & 0x0F);
-
-    gdix_dbg("Version = %d.%d\n",m_firmwareVersionMajor,m_firmwareVersionMinor);
+	gdix_dbg("version:0x%x,0x%x\n",m_firmwareVersionMajor,m_firmwareVersionMinor);
 
     return 0;  
  }

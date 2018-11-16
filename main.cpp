@@ -46,15 +46,17 @@
 
 #define RAM_BUFFER_SIZE	    4096
 
-#define GTPUPDATE_GETOPTS	"hfd:pvt:s:"
+#define GTPUPDATE_GETOPTS	"hfd:pvt:s:i"
 
 #define VERSION_MAJOR		1
 #define VERSION_MINOR		5
-#define VERSION_SUBMINOR	0
+#define VERSION_SUBMINOR	3
 
 #define TYPE_PHOENIX 0
 #define TYPE_NANJING 1
 #define TYPE_MOUSEPAD 2
+
+bool pdebug = false;
 
 void printHelp(const char *prog_name)
 {
@@ -66,6 +68,7 @@ void printHelp(const char *prog_name)
 	fprintf(stdout, "\t-v, --version\tPrint version number.\n");
 	fprintf(stdout, "\t-t, --type\t device pid number.\n");
 	fprintf(stdout, "\t-s, --series\t device series type number like 8589 or 7288.\n");
+	fprintf(stdout, "\t-i, --info\t print detail info while the tool is running.\n");
 }
 
 void printVersion()
@@ -113,6 +116,7 @@ int main(int argc, char **argv)
 		{"version", 0, NULL, 'v'},
 		{"type", 1, NULL, 't'},
 		{"series",1,NULL,'s'},
+		{"info",1,NULL,'i'},
 		{0, 0, 0, 0},
 	};
 	bool printFirmwareProps = false;
@@ -141,6 +145,9 @@ int main(int argc, char **argv)
 			case 's':
 				productionTypeName = optarg;
 				gdix_dbg("product type is %s\n",productionTypeName);
+				break;
+			case 'i':
+				pdebug = true;
 				break;
 			default:
 				break;
@@ -214,10 +221,12 @@ int main(int argc, char **argv)
 	}
 	else
 	{
-		if(pid != NULL)
+		if(pid != NULL){
 			gdix_err("unsupport it,pid number:%s\n",pid);
-		else
+		}
+		else{
 			gdix_err("unsupport it,product type number:%s\n",productionTypeName);
+		}
 		return -1;
 	}
 

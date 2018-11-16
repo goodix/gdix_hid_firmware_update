@@ -23,16 +23,18 @@
 #define GDIX_UPDATE_DEBUG
 //#define GDIX_DBG_ARRY
 
+extern bool pdebug;
+
 #ifdef GDIX_UPDATE_DEBUG
-#define gdix_info(fmt, arg...)  fprintf(stdout, "[GDIX_INFO][%s:%d]" fmt, __func__, __LINE__, ##arg)
-#define gdix_err(fmt, arg...)  fprintf(stderr, "[GDIX_ERROR][%s:%d]" fmt, __func__, __LINE__, ##arg)
+#define gdix_info(fmt, arg...) do{if(pdebug) fprintf(stdout, "[GDIX_INFO][%s:%d]" fmt, __func__, __LINE__, ##arg);}while(0)
+#define gdix_err(fmt, arg...)  do{if(pdebug) fprintf(stderr, "[GDIX_ERROR][%s:%d]" fmt, __func__, __LINE__, ##arg);}while(0)
 #else
 #define gdix_info(fmt, arg...) do{}while(0)
 #define gdix_err(fmt, arg...) do{}while(0)
 #endif
 
 #ifdef GDIX_UPDATE_DEBUG
-#define gdix_dbg(fmt, arg...)  fprintf(stdout, "[GDIX_DEBUG][%s:%d]" fmt, __func__, __LINE__, ##arg)
+#define gdix_dbg(fmt, arg...)  do{if(pdebug) fprintf(stdout, "[GDIX_DEBUG][%s:%d]" fmt, __func__, __LINE__, ##arg);}while(0)
 #else
 #define gdix_dbg(fmt, arg...) do{}while(0)
 #endif

@@ -73,6 +73,8 @@ int GTx2Update::Run(void *para)
 		flag = firmware;
 	}
 
+	gdix_dbg("Flag = %d\n",flag);
+
     if(!parameter->force)
     {
         ret = check_update();
