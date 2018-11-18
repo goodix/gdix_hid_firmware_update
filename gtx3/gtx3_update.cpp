@@ -165,9 +165,6 @@ int GTx3Update::cfg_update()
 	int ret, i;
 	unsigned char temp_buf[65];
 	unsigned char *fw_data = NULL;
-	unsigned char buf_switch_to_patch[] = {0x00, 0x10, 0x00, 0x00, 0x01, 0x01};
-	unsigned char buf_start_update[] = {0x00, 0x11, 0x00, 0x00, 0x01, 0x01};
-	unsigned char buf_restart[] = {0x0E, 0x13, 0x00, 0x00, 0x01, 0x01};
 	unsigned char cfg_ver_after[3];
 	unsigned char cfg_ver_before[3];
 	unsigned char cfg_ver_infile;
@@ -221,54 +218,75 @@ int GTx3Update::cfg_update()
 		return -5;
 	if(findMatchCfg)
 	{
-		ret = dev->Write(buf_switch_to_patch, sizeof(buf_switch_to_patch)) ;
+		//tell ic i want to send cfg
+		temp_buf[0] = 0x80;
+		temp_buf[1] = 0;
+		temp_buf[2] = 0x80;
+		ret = dev->Write(0x8040,temp_buf, 3) ;
 		if (ret < 0) {
-			gdix_err("Failed switch to patch\n");
+			gdix_err("Failed write send cfg cmd\n");
 			return ret;
 		}
-		
+
+		//wait ic to comfirm
 		usleep(250000);
 		retry = GDIX_RETRY_TIMES;
 		do {
-			ret = dev->Read(BL_STATE_ADDR, temp_buf, 1);
-			gdix_dbg("BL_STATE_ADDR\n");
+			ret = dev->Read(0x8040, temp_buf, 1);
+			gdix_dbg("Wait 0x8040 == 0x82...\n");
 			if (ret < 0) {
-				gdix_err("Failed read 0x%x, ret = %d\n", BL_STATE_ADDR, ret);
-				goto update_err;
+				gdix_err("Failed read 0x%x, ret = %d\n", 0x8040, ret);
 			} 
-			if (temp_buf[0] == 0xDD)
+			if (temp_buf[0] == 0x82)
 				break;
-			gdix_info("0x%x value is 0x%x != 0xDD, retry\n", BL_STATE_ADDR, temp_buf[0]);
+			gdix_info("0x%x value is 0x%x != 0x82, retry\n", 0x8040, temp_buf[0]);
 			usleep(30000);
 		} while (--retry);
 
 		if (!retry) {
-			gdix_err("Reg 0x%x != 0xDD\n", BL_STATE_ADDR);
+			gdix_err("Reg 0x%x != 0x82\n", 0x8040);
 			ret = -2;
 			goto update_err;
 		}
+		gdix_dbg("Wait 0x8040 == 0x82 success.\n");
 
-		/* Start update */
-		ret = dev->Write(buf_start_update, sizeof(buf_start_update)) ;
+		/* Start load config */
+		ret = dev->Write(0x8050, &fw_data[cfg_offset],sub_cfg_len) ;
 		if (ret < 0) {
-			gdix_err("Failed start update, ret=%d\n", ret);
+			gdix_err("Failed write cfg to xdata, ret=%d\n", ret);
 			goto update_err;
 		}
 		usleep(100000);
 
-		//start load cfg
-		ret = load_sub_firmware(CFG_FLASH_ADDR,&fw_data[cfg_offset], sub_cfg_len);
+		//tell ic cfg is ready in xdata
+		temp_buf[0] = 0x83;
+		ret = dev->Write(0x8040,temp_buf, 1) ;
+		if (ret < 0) {
+			gdix_err("Failed write send cfg finish cmd\n");
+			return ret;
+		}
 
-		/* reset IC */
-		gdix_dbg("reset ic\n");
-		retry = 3;
+		//check if ic is ok with the cfg
+		usleep(80000);
+		retry = GDIX_RETRY_TIMES;
 		do {
-			ret = dev->Write(buf_restart, sizeof(buf_restart));
-			if (ret < 0)
-				gdix_dbg("Failed write restart command, ret=%d\n", ret);
-			usleep(20000);
-		} while(--retry);
-		usleep(300000);
+			ret = dev->Read(0x8040, temp_buf, 1);
+			gdix_dbg("Wait 0x8040 == 0xFF...\n");
+			if (ret < 0) {
+				gdix_err("Failed read 0x%x, ret = %d\n", 0x8040, ret);
+			} 
+			if (temp_buf[0] == 0xff)
+				break;
+			gdix_info("0x%x value is 0x%x != 0xFF, retry\n", 0x8040, temp_buf[0]);
+			usleep(30000);
+		} while (--retry);
+
+		if (!retry) {
+			gdix_err("Reg 0x%x != 0xFF\n", 0x8040);
+			ret = -2;
+			goto update_err;
+		}
+		gdix_dbg("Wait 0x8040 == 0xFF success.\n");
 
 		//before update config,read curr config version
 		dev->Read(0x8050,cfg_ver_after,3);
