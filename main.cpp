@@ -49,8 +49,8 @@
 #define GTPUPDATE_GETOPTS	"hfd:pvt:s:i"
 
 #define VERSION_MAJOR		1
-#define VERSION_MINOR		5
-#define VERSION_SUBMINOR	3
+#define VERSION_MINOR		6
+#define VERSION_SUBMINOR	1
 
 #define TYPE_PHOENIX 0
 #define TYPE_NANJING 1
@@ -173,7 +173,13 @@ int main(int argc, char **argv)
 	//check chip type
 	if(pid != NULL)
 	{
-		if(!strcmp(pid,"01f0"))
+		if(!strcmp(pid,"0111") || 
+			!strcmp(pid,"0112") ||
+			!strcmp(pid,"0113") || 
+			!strcmp(pid,"0114") || 
+			!strcmp(pid,"0118"))
+				chipType = TYPE_PHOENIX;//7388 match
+		else if(!strcmp(pid,"01f0"))
 			chipType = TYPE_MOUSEPAD;
 	}else if(productionTypeName != NULL)
 	{

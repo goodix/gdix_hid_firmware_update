@@ -65,8 +65,8 @@
 	m_sensorID = fw_info[10]&0x0f;
 	gdix_dbg("sensorID:%d\n",m_sensorID);
 
-	m_firmwareVersionMajor = fw_info[4];
-	m_firmwareVersionMinor = ((fw_info[5] << 16) | (fw_info[6])<<8) | cfg_ver;
+	m_firmwareVersionMajor = fw_info[5];
+	m_firmwareVersionMinor = ((fw_info[6] << 16) | (fw_info[7])<<8) | cfg_ver;
 
 	gdix_dbg("version:0x%x,0x%x\n",m_firmwareVersionMajor,m_firmwareVersionMinor);
 
