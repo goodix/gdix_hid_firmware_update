@@ -1,8 +1,16 @@
+### Introduction
+This project is used to update firmware for Goodix gtx5 serials touch
+controller via HIDRAW node. This source has been compiled and tested under
+Linux systems with libc.
+
+### Compile
+$ make
+
 ### How to do a Firmware update
 Boot up your target device and login in.
 In the browser,press Ctrl+Alt+T to open a terminal,type 'shell' enter the shell.
 
-Copy this folder to the target device,put it in someplace,like /usr/local/.
+Copy `gdixupdate` to the target device,put it in someplace,like /usr/local/.
 
 To find the goodix hid device path,go to `/sys/bus/hid/device`,find a hid device that VID match `27C6`,
 
