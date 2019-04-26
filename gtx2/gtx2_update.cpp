@@ -137,6 +137,7 @@ int GTx2Update::load_sub_firmware(unsigned int flash_addr,unsigned char *fw_data
 	unsigned int load_data_len = 0;
 	unsigned char buf_load_flash[15] = {0x0e, 0x12, 0x00, 0x00, 0x06};
 	unsigned short check_sum = 0;
+	unsigned char dummy = 0;
 	int retry_load = 0;
 
 	while (retry_load < GDIX_RETRY_TIMES && load_data_len != len) {
@@ -190,6 +191,7 @@ int GTx2Update::load_sub_firmware(unsigned int flash_addr,unsigned char *fw_data
 			load_data_len += unitlen;
 			flash_addr += unitlen;
 			retry_load = 0;
+			dev->Write(0x5096,&dummy,1);
 			ret = 0;
 		}
 	}

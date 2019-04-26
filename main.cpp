@@ -50,7 +50,7 @@
 
 #define VERSION_MAJOR		1
 #define VERSION_MINOR		6
-#define VERSION_SUBMINOR	1
+#define VERSION_SUBMINOR	4
 
 #define TYPE_PHOENIX 0
 #define TYPE_NANJING 1
@@ -173,14 +173,33 @@ int main(int argc, char **argv)
 	//check chip type
 	if(pid != NULL)
 	{
-		if(!strcmp(pid,"0111") || 
+		/*if(!strcmp(pid,"0111") || 
 			!strcmp(pid,"0112") ||
 			!strcmp(pid,"0113") || 
 			!strcmp(pid,"0114") || 
 			!strcmp(pid,"0118"))
 				chipType = TYPE_PHOENIX;//7388 match
 		else if(!strcmp(pid,"01f0"))
+			chipType = TYPE_MOUSEPAD;*/
+
+		regex_t reg_pid;
+		regcomp(&reg_pid,"^011[0-9A-Fa-f]$",REG_EXTENDED);//phoenix pid 011x
+		if(REG_NOERROR == regexec(&reg_pid,pid,1,pamtch,0))
+		{	
+			gdix_dbg("pid match phoenix pid 011x\n");
+			chipType = TYPE_PHOENIX;
+		}
+		regfree(&reg_pid);
+
+		regcomp(&reg_pid,"^01[fF][0-9A-Fa-f]$",REG_EXTENDED);//mouse pad pid 01fx
+		if(REG_NOERROR == regexec(&reg_pid,pid,1,pamtch,0))
+		{	
+			gdix_dbg("pid match mousepad pid 01fx\n");
 			chipType = TYPE_MOUSEPAD;
+		}
+		regfree(&reg_pid);
+		
+		
 	}else if(productionTypeName != NULL)
 	{
 		regcomp(&reg_x3xx,"^[0-9]3[0-9]{2}",REG_EXTENDED);
@@ -195,6 +214,10 @@ int main(int argc, char **argv)
 			chipType = TYPE_MOUSEPAD;//7288 match
 		else
 			chipType = -1;//no match
+
+		regfree(&reg_x3xx);
+		regfree(&reg_x5xx);
+		regfree(&reg_x2xx);
 	}
 
 	if(chipType < 0)
