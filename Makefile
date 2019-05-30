@@ -1,10 +1,5 @@
-ifeq ($(arm),true)
-	CXX = arm-linux-gnueabi-g++
-	TARGETNAME = gdixupdate_arm
-else
-	CXX = g++
-	TARGETNAME = gdixupdate
-endif
+CXX ?= g++
+
 CXXFLAGS += -Wall
 CXXFLAGS += -g -static
 UPDATESRC = main.cpp gt_update.cpp firmware_image.cpp \
@@ -13,13 +8,13 @@ UPDATESRC = main.cpp gt_update.cpp firmware_image.cpp \
 	gtx2/gtx2_update.cpp gtx5/gtx5_update.cpp gtx3/gtx3_update.cpp
 
 UPDATEOBJ = $(UPDATESRC:.cpp=.o)
-#PROGNAME = gdixupdate
+PROGNAME = gdixupdate
 
 
-all: $(TARGETNAME)
+all: $(PROGNAME)
 
-$(TARGETNAME): $(UPDATEOBJ)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(UPDATEOBJ) -o $(TARGETNAME)
+$(PROGNAME): $(UPDATEOBJ)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(UPDATEOBJ) -o $(PROGNAME)
 
 clean:
-	rm -f $(UPDATEOBJ) $(TARGETNAME)
+	rm -f $(UPDATEOBJ) $(PROGNAME)

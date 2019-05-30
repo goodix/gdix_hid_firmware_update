@@ -185,16 +185,32 @@ int main(int argc, char **argv)
 		regex_t reg_pid;
 		regcomp(&reg_pid,"^011[0-9A-Fa-f]$",REG_EXTENDED);//phoenix pid 011x
 		if(REG_NOERROR == regexec(&reg_pid,pid,1,pamtch,0))
-		{	
+		{
 			gdix_dbg("pid match phoenix pid 011x\n");
+			chipType = TYPE_PHOENIX;
+		}
+		regfree(&reg_pid);
+
+		regcomp(&reg_pid,"^0[eE][0-9A-Fa-f]{2}$",REG_EXTENDED);//phoenix pid 0exx
+		if(REG_NOERROR == regexec(&reg_pid,pid,1,pamtch,0))
+		{
+			gdix_dbg("pid match phoenix pid 0exx\n");
 			chipType = TYPE_PHOENIX;
 		}
 		regfree(&reg_pid);
 
 		regcomp(&reg_pid,"^01[fF][0-9A-Fa-f]$",REG_EXTENDED);//mouse pad pid 01fx
 		if(REG_NOERROR == regexec(&reg_pid,pid,1,pamtch,0))
-		{	
+		{
 			gdix_dbg("pid match mousepad pid 01fx\n");
+			chipType = TYPE_MOUSEPAD;
+		}
+		regfree(&reg_pid);
+
+		regcomp(&reg_pid,"^0[fF][0-9A-Fa-f]{2}$",REG_EXTENDED);//mouse pad pid 0fxx
+		if(REG_NOERROR == regexec(&reg_pid,pid,1,pamtch,0))
+		{
+			gdix_dbg("pid match mousepad pid 0fxx\n");
 			chipType = TYPE_MOUSEPAD;
 		}
 		regfree(&reg_pid);
@@ -311,5 +327,3 @@ int main(int argc, char **argv)
 	delete gt_model;
     return 0;
 }
-
-
