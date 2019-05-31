@@ -162,7 +162,7 @@ update_err:
 int GTx3Update::cfg_update()
 {
 	int retry;
-	int ret, i;
+	int ret = -1, i;
 	unsigned char temp_buf[65];
 	unsigned char *fw_data = NULL;
 	unsigned char cfg_ver_after[3];
