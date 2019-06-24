@@ -46,11 +46,11 @@
 
 #define RAM_BUFFER_SIZE	    4096
 
-#define GTPUPDATE_GETOPTS	"hfd:pvt:s:i"
+#define GTPUPDATE_GETOPTS	"hfd:pvt:s:im"
 
 #define VERSION_MAJOR		1
-#define VERSION_MINOR		6
-#define VERSION_SUBMINOR	4
+#define VERSION_MINOR		5
+#define VERSION_SUBMINOR	8
 
 #define TYPE_PHOENIX 0
 #define TYPE_NANJING 1
@@ -69,6 +69,7 @@ void printHelp(const char *prog_name)
 	fprintf(stdout, "\t-t, --type\t device pid number.\n");
 	fprintf(stdout, "\t-s, --series\t device series type number like 8589 or 7288.\n");
 	fprintf(stdout, "\t-i, --info\t print detail info while the tool is running.\n");
+	fprintf(stdout, "\t-m, --module\t print module/sensor ID.\n");
 }
 
 void printVersion()
@@ -116,10 +117,12 @@ int main(int argc, char **argv)
 		{"version", 0, NULL, 'v'},
 		{"type", 1, NULL, 't'},
 		{"series",1,NULL,'s'},
-		{"info",1,NULL,'i'},
+		{"info",0,NULL,'i'},
+		{"module",0,NULL,'m'},
 		{0, 0, 0, 0},
 	};
 	bool printFirmwareProps = false;
+	bool printModuleId = false;
 	while ((opt = getopt_long(argc, argv, GTPUPDATE_GETOPTS, long_options, &index)) != -1) {
 		switch (opt) {
 			case 'h':
@@ -149,6 +152,9 @@ int main(int argc, char **argv)
 			case 'i':
 				pdebug = true;
 				break;
+			case 'm':
+				printModuleId = true;
+				break;
 			default:
 				break;
 
@@ -164,7 +170,7 @@ int main(int argc, char **argv)
 		gdix_err("please input pid or product type\n");
 		return -1;
 	}
-	if(!printFirmwareProps && NULL == firmwareName)
+	if(!printModuleId && !printFirmwareProps && NULL == firmwareName)
 	{
 		gdix_err("file name not found\n");
 		return -1;
@@ -267,14 +273,15 @@ int main(int argc, char **argv)
 	else
 	{
 		if(pid != NULL){
-			gdix_err("unsupport it,pid number:%s\n",pid);
+			gdix_err("unsupported pid number:%s\n",pid);
 		}
 		else{
-			gdix_err("unsupport it,product type number:%s\n",productionTypeName);
+			gdix_err("unsupported product type number:%s\n",productionTypeName);
 		}
 		return -1;
 	}
 
+	/* get and print active FW version */
 	if (printFirmwareProps) {
 		char props_buf[60] = {0};
 		ret = gt_model->GetFirmwareProps(deviceName, props_buf, sizeof(props_buf));
@@ -294,14 +301,20 @@ int main(int argc, char **argv)
 	if (ret) {
 		gdix_err("failed open device:%s\n", deviceName);
 		delete gt_model;
-                return -1;
+        return -1;
+	}
+
+	if (printModuleId) {
+		printf("module_id:%d\n", gt_model->GetSensorID());
+		delete gt_model;
+		return 0;
 	}
 
 	ret = fw_image->Initialize(firmwareName);
 	if (ret) {
 		gdix_err("Failed read firmware file:%s\n", firmwareName);
 		delete gt_model;
-                return -2;
+        return -2;
 	}
 
 	ret = gt_update->Initialize(gt_model,fw_image);

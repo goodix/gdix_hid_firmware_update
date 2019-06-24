@@ -1,7 +1,6 @@
 CXX ?= g++
 
 CXXFLAGS += -Wall
-CXXFLAGS += -g -static
 UPDATESRC = main.cpp gt_update.cpp firmware_image.cpp \
 	gtx2/gtx2.cpp gtx5/gtx5.cpp  gtx3/gtx3.cpp\
 	gtx2/gtx2_firmware_image.cpp gtx5/gtx5_firmware_image.cpp gtx3/gtx3_firmware_image.cpp\
@@ -9,7 +8,10 @@ UPDATESRC = main.cpp gt_update.cpp firmware_image.cpp \
 
 UPDATEOBJ = $(UPDATESRC:.cpp=.o)
 PROGNAME = gdixupdate
-
+STATIC_BUILD ?= n
+ifeq ($(STATIC_BUILD), y)
+	LDFLAGS += -static
+endif
 
 all: $(PROGNAME)
 
