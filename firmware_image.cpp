@@ -268,11 +268,10 @@ updateFlag FirmwareImage::GetUpdateFlag()
 {
 	if(hasConfig)
 	{
-		return (updateFlag)(m_firmwareData[m_firmwareSize+6+2]&0x03);
+		return (updateFlag)(m_firmwareData[m_firmwareSize+6+2]);
 	}
-	return none;
+	return NO_NEED_UPDATE;
 }
-
 
 void FirmwareImage::Close()
 {

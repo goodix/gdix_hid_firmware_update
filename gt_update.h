@@ -30,7 +30,7 @@ protected:
 
 typedef struct{
     bool force;
-    unsigned int firmwareFalg;
+    unsigned int firmwareFlag;
 }GTUpdatePara,*pGTUpdatePara;
 
 #endif

@@ -49,8 +49,8 @@
 #define GTPUPDATE_GETOPTS	"hfd:pvt:s:im"
 
 #define VERSION_MAJOR		1
-#define VERSION_MINOR		5
-#define VERSION_SUBMINOR	8
+#define VERSION_MINOR		7
+#define VERSION_SUBMINOR	0
 
 #define TYPE_PHOENIX 0
 #define TYPE_NANJING 1
@@ -327,7 +327,7 @@ int main(int argc, char **argv)
 	//run update
 	gt_update_para = new GTUpdatePara;
 	gt_update_para->force = force;
-	gt_update_para->firmwareFalg = firmware_flag;
+	gt_update_para->firmwareFlag = firmware_flag;
 	
 	ret = gt_update->Run(gt_update_para);
 	if(ret)

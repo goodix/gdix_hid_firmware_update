@@ -60,7 +60,7 @@ int GTx5Update::Run(void *para)
 
     retry = 0;
 	do {
-		ret = fw_update(parameter->firmwareFalg);
+		ret = fw_update(parameter->firmwareFlag);
 		if (ret) {
 			gdix_dbg("Update failed\n");
 			usleep(200000);

@@ -13,36 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- #include <stdio.h>
- #include <sys/types.h>
- #include <sys/stat.h>
- #include <fcntl.h>
- #include <dirent.h>
- #include <errno.h>
- #include <string.h>
- #include <unistd.h>
- #include <sys/ioctl.h>
- #include <sys/select.h>
- #include <linux/types.h>
- #include <linux/input.h>
- #include <linux/hidraw.h>
- #include <signal.h>
- #include <stdlib.h>
- #include <sys/inotify.h>
- #include "../gtp_util.h"
- #include "gtx5.h"
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <errno.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
+#include <sys/select.h>
+#include <linux/types.h>
+#include <linux/input.h>
+#include <linux/hidraw.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <sys/inotify.h>
+#include "../gtp_util.h"
+#include "gtx5.h"
 
- GTx5Device::GTx5Device()
- {
+GTx5Device::GTx5Device()
+{
     m_firmwareVersionMajor = 0;
-     m_firmwareVersionMinor = 0;
-         m_sensorID = 16; /* > 15 invalid ID */
-         memset(m_pid, 0, sizeof(m_pid));
-         m_hidDevType = HID_MACHINE;
-         m_deviceOpen = false;
-         m_bCancel = false;
-         m_fd = -1;
- }
+    m_firmwareVersionMinor = 0;
+    m_sensorID = 16; /* > 15 invalid ID */
+    memset(m_pid, 0, sizeof(m_pid));
+    m_hidDevType = HID_MACHINE;
+    m_deviceOpen = false;
+    m_bCancel = false;
+    m_fd = -1;
+}
 
  int GTx5Device::GetFirmwareProps(const char *deviceName, char *props_buf, int len)
  {
@@ -60,35 +60,36 @@
      return 0;
  }
 
- int GTx5Device::Open(const char *filename)
- {
-         int rc;
-     if (!filename)
-         return -EINVAL;
-     m_fd = open(filename, O_RDWR);
-     if (m_fd < 0)
-         return -1;
-         m_deviceOpen = true;
-     m_inputReportSize = 65;
-     m_outputReportSize = 65;
-         m_inputReport = new unsigned char[m_inputReportSize]();
-     if (!m_inputReport) {
-         errno = -ENOMEM;
-         rc = -1;
-         goto error;
-     }
-     m_outputReport = new unsigned char[m_outputReportSize]();
-     if (!m_outputReport) {
-         errno = -ENOMEM;
-         rc = -1;
-         goto error;
-     }
-         /* get and active firmware info */
-         return SetBasicProperties();
- error:
-         Close();
-     return rc;
- }
+int GTx5Device::Open(const char *filename)
+{
+    int rc;
+
+    if (!filename)
+        return -EINVAL;
+    m_fd = open(filename, O_RDWR);
+    if (m_fd < 0)
+        return -1;
+    m_deviceOpen = true;
+    m_inputReportSize = 65;
+    m_outputReportSize = 65;
+    m_inputReport = new unsigned char[m_inputReportSize]();
+    if (!m_inputReport) {
+        errno = -ENOMEM;
+        rc = -1;
+        goto error;
+    }
+    m_outputReport = new unsigned char[m_outputReportSize]();
+    if (!m_outputReport) {
+        errno = -ENOMEM;
+        rc = -1;
+        goto error;
+    }
+    /* get active firmware info */
+    return SetBasicProperties();
+error:
+    Close();
+    return rc;
+}
 
 
  void GTx5Device::Close()
@@ -275,7 +276,7 @@
  {
      int ret;
      unsigned char fw_info[12] = {0};
-         m_firmwareVersionMajor = 20;
+     m_firmwareVersionMajor = 20;
      m_firmwareVersionMinor = 20;
          m_sensorID = 2;
      int retry = 10;
@@ -298,6 +299,6 @@
      m_sensorID = fw_info[10] & 0x0F;
      m_firmwareVersionMajor = (fw_info[5] >> 4) * 10 + (fw_info[5] & 0x0F);
      m_firmwareVersionMinor = (fw_info[6] >> 4) * 10 + (fw_info[6] & 0x0F);
-         return 0;  
+     return 0;  
  }
 

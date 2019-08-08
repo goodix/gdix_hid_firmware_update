@@ -27,10 +27,14 @@ class GTx3Update : public GTx2Update
 public:
     GTx3Update();
     virtual ~GTx3Update();
+    virtual int Run(void* para);
 
 protected:
     virtual int fw_update(unsigned int firmware_flag);
     virtual int cfg_update();
+    virtual int flash_cfg_with_isp();
+private:
+    bool is_cfg_flashed_with_isp;
 };
 
 

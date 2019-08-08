@@ -56,10 +56,12 @@ int GTX3FirmwareImage::InitVid(){
     if(!m_firmwareData)
         goto exit;
 
-    m_firmwareVersionMajor = (m_firmwareData[GTX3_FW_IMAGE_CID_OFFSET]);
-    m_firmwareVersionMinor = (  (m_firmwareData[GTX3_FW_IMAGE_VID_OFFSET] << 16) |
-                               (m_firmwareData[GTX3_FW_IMAGE_VID_OFFSET + 1] << 8) |
-                               (m_firmwareData[GTX3_FW_IMAGE_VID_OFFSET + 2]));
+    m_firmwareVersionMajor = m_firmwareData[GTX3_FW_IMAGE_VID_OFFSET];
+    /* |--vid2--|--vid3--|--cfg_id--|
+     * reserve the last byte for config ID.
+     */
+    m_firmwareVersionMinor = (m_firmwareData[GTX3_FW_IMAGE_VID_OFFSET + 1] << 16) |
+                               (m_firmwareData[GTX3_FW_IMAGE_VID_OFFSET + 2] << 8);
     gdix_dbg("cid:0x%02x,vid 0x%02X,0x%02X,0x%02X\n",
             m_firmwareData[GTX3_FW_IMAGE_CID_OFFSET],
             m_firmwareData[GTX3_FW_IMAGE_VID_OFFSET],

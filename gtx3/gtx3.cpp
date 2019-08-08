@@ -29,13 +29,14 @@
 
  int GTx3Device::SetBasicProperties()
  {
-     int ret;
-     unsigned char fw_info[12] = {0};
+    int ret;
+    unsigned char fw_info[12] = {0};
     m_firmwareVersionMajor = 20;
     m_firmwareVersionMinor = 20;
-    m_sensorID = 2;
+    m_sensorID = 0xF;
     unsigned char cfg_ver = 0;
-     int retry = 10;
+    int retry = 10;
+
      if (!m_deviceOpen) {
          gdix_err("Please open device first\n");
          return -1;

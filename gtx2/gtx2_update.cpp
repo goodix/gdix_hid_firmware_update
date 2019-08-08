@@ -38,7 +38,7 @@
 #include "gtx2_firmware_image.h"
 
 //cfg addr
-#define CFG_FLASH_ADDR 0x3e000
+#define CFG_FLASH_ADDR 0x3E000
 
 GTx2Update::GTx2Update()
 {
@@ -50,13 +50,11 @@ GTx2Update::~GTx2Update()
     
 }
 
-
-
 int GTx2Update::Run(void *para)
 {
     int ret = 0;
     int retry = 0;
-	updateFlag flag = none;
+	updateFlag flag = NO_NEED_UPDATE;
     if(!m_Initialized){
         gdix_err("Can't Process Update Before Initialized.\n");
         return -1;
@@ -70,7 +68,7 @@ int GTx2Update::Run(void *para)
 	}
 	else{
 		//default for firmware
-		flag = firmware;
+		flag = NEED_UPDATE_FW;
 	}
 
 	gdix_dbg("Flag = %d\n",flag);
@@ -84,10 +82,10 @@ int GTx2Update::Run(void *para)
 		}
     }
 
-	if(flag & firmware){
+	if(flag & NEED_UPDATE_FW){
 		retry = 0;
 		do {
-			ret = fw_update(parameter->firmwareFalg);
+			ret = fw_update(parameter->firmwareFlag);
 			if (ret) {
 				gdix_dbg("Update failed\n");
 				usleep(200000);
@@ -104,9 +102,9 @@ int GTx2Update::Run(void *para)
 	}
 
 	//before go forward,Set Basic Properties to refresh SensorID
-	dev->SetBasicProperties();
+	//dev->SetBasicProperties();
 
-	if(flag & config){
+	if(flag & NEED_UPDATE_CONFIG){
 		retry = 0;
 		do {
 			ret = cfg_update();

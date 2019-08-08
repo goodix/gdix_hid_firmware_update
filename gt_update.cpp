@@ -20,6 +20,7 @@ int GTupdate::Initialize(GTmodel *dev,FirmwareImage *image)
 	return -1;
 }
 
+/* NOTE: deprecated interface */
 int GTupdate::check_update()
 {
 	int ret;

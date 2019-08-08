@@ -29,7 +29,13 @@
 #include <cstddef>
 
 //update type
-enum updateFlag {none = 0,firmware=1,config=2};
+enum updateFlag {
+	NO_NEED_UPDATE = 0,
+	NEED_UPDATE_FW = 1,
+	NEED_UPDATE_CONFIG = 2,
+	NEED_UPDATE_CONFIG_WITH_ISP = 0x10,
+	NEED_UPDATE_HID_SUBSYSTEM = 0x80,
+};
 
 class FirmwareImage
 {
