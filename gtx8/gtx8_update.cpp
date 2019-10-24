@@ -33,23 +33,25 @@
 #include <sys/inotify.h>
 
 #include "../gtp_util.h"
-#include "gtx3_update.h"
-#include "gtx3.h"
-#include "gtx3_firmware_image.h"
+#include "gtx8_update.h"
+#include "gtx8.h"
+#include "gtx8_firmware_image.h"
 
-#define CFG_FLASH_ADDR 0x3E000
+#define CFG_FLASH_ADDR 0x1E000
+#define CFG_START_ADDR 0X60DC
+#define CMD_ADDR       0x60cc
 
-GTx3Update::GTx3Update()
+GTx8Update::GTx8Update()
 {
 	is_cfg_flashed_with_isp = false;
 }
 
-GTx3Update::~GTx3Update()
+GTx8Update::~GTx8Update()
 {
 	
 }
 
-int GTx3Update::Run(void *para)
+int GTx8Update::Run(void *para)
 {
     int ret = 0;
     int retry = 0;
@@ -125,39 +127,7 @@ int GTx3Update::Run(void *para)
     return 0;
 }
 
-#define HID_SUBSYSTEM_TYPE_ID  (5)
-/* 00.01.17  */
-#define HID_FORCE_UPDATE_VER_MAJOR (0)
-#define HID_FORCE_UPDATE_VER_MINOR (0x0117)
-/* return true when need update hid subsystem, otherwise false is returned */
-bool need_upgrade_hid_subsystem(GTmodel* dev, FirmwareImage* fw_img)
-{
-	int dev_fw_ver = 0;
-	int img_fw_ver = 0;
-	int boundary_fw_ver = (HID_FORCE_UPDATE_VER_MAJOR << 16) | HID_FORCE_UPDATE_VER_MINOR;
-
-	if (fw_img->GetUpdateFlag() & NEED_UPDATE_HID_SUBSYSTEM) {
-		gdix_dbg("get hid subsystem update flag from fw_img file:0x%x\n",
-			fw_img->GetUpdateFlag());
-		return true;
-	}
-	/* ignore the config_id byte */
-	dev_fw_ver = (dev->GetFirmwareVersionMajor() << 16) | 
-				  ((dev->GetFirmwareVersionMinor() >> 8) & 0xFFFF);
-	img_fw_ver = (fw_img->GetFirmwareVersionMajor() << 16) | 
-				  ((fw_img->GetFirmwareVersionMinor() >> 8) & 0xFFFF);
-
-	gdix_dbg("boundery_ver 0x%x, dev_ver 0x%x, fw_ver 0x%x\n", boundary_fw_ver,
-			dev_fw_ver, img_fw_ver);
-	if (dev_fw_ver < boundary_fw_ver || img_fw_ver < boundary_fw_ver) {
-		gdix_dbg("hid subsystem need update judged by fw_ver\n");
-		return true;
-	}
-
-	return false;
-}
-
-int GTx3Update::fw_update(unsigned int firmware_flag)
+int GTx8Update::fw_update(unsigned int firmware_flag)
 {
     int retry;
 	int ret, i;
@@ -218,17 +188,11 @@ int GTx3Update::fw_update(unsigned int firmware_flag)
 	}
 
 	sub_fw_num = image->GetFirmwareSubFwNum();//fw_data[FW_IMAGE_SUB_FWNUM_OFFSET];
-	// sub_fw_info_pos = image->GetFirmwareSubFwInfoOffset();// SUB_FW_INFO_OFFSET;
-	// fw_image_offset = image->GetFirmwareSubFwDataOffset() ; //SUB_FW_DATA_OFFSET;
+	sub_fw_info_pos = image->GetFirmwareSubFwInfoOffset();// SUB_FW_INFO_OFFSET;
+	fw_image_offset = image->GetFirmwareSubFwDataOffset() ; //SUB_FW_DATA_OFFSET;
 	gdix_dbg("load sub firmware, sub_fw_num=%d\n", sub_fw_num);
 	if(sub_fw_num == 0)
 		return -5;
-
-	/* flash HID subsystem */
-	if (need_upgrade_hid_subsystem(dev, image)) {
-		firmware_flag |= (0x1 << HID_SUBSYSTEM_TYPE_ID);
-		gdix_dbg("hid subsystem updata flag setted\n");
-	}
 
 	/* load normal firmware package */
 	for (i = 0; i < sub_fw_num; i++) {
@@ -265,8 +229,7 @@ int GTx3Update::fw_update(unsigned int firmware_flag)
 	/* flash config with isp if NEED_UPDATE_CONFIG_WITH_ISP flag is setted or
 	 * hid subsystem updated.
 	 */
-	if (image->GetUpdateFlag() & NEED_UPDATE_CONFIG_WITH_ISP || 
-		firmware_flag & (0x1 << HID_SUBSYSTEM_TYPE_ID)) {
+	if (image->GetUpdateFlag() & NEED_UPDATE_CONFIG_WITH_ISP) {
 		this->is_cfg_flashed_with_isp = true;
 		ret = flash_cfg_with_isp();
 		if (ret < 0) {
@@ -275,6 +238,7 @@ int GTx3Update::fw_update(unsigned int firmware_flag)
 		}
 	}
 
+update_err:
 	/* reset IC */
 	gdix_dbg("reset ic\n");
 	retry = 3;
@@ -282,26 +246,22 @@ int GTx3Update::fw_update(unsigned int firmware_flag)
 		ret = dev->Write(buf_restart, sizeof(buf_restart));
 		if (ret < 0)
 			gdix_dbg("Failed write restart command, ret=%d\n", ret);
-		usleep(20000);
+		else 
+			break;
+		usleep(30000);
 	} while(--retry);
-	usleep(300000);
-	return 0;
+	if (retry) {
+		gdix_dbg("reset ic success\n");
+		ret = 0;
+	} else {
+		gdix_err("reset ic failed\n");
+	}
+	usleep(200000);
 
-update_err:
-	/* reset IC */
-	gdix_dbg("reset ic\n");
-	retry = 3;
-	do {
-		if (dev->Write(buf_restart, sizeof(buf_restart)) < 0)
-			gdix_dbg("Failed write restart command\n");
-		usleep(20000);
-	} while(--retry);
-
-	usleep(300000);
 	return ret;
 }
 
-int GTx3Update::flash_cfg_with_isp()
+int GTx8Update::flash_cfg_with_isp()
 {
 	int ret = -1, i = 0;
 	updateFlag flag = NO_NEED_UPDATE;
@@ -369,7 +329,7 @@ int GTx3Update::flash_cfg_with_isp()
 	return 0;
 }
 
-int GTx3Update::cfg_update()
+int GTx8Update::cfg_update()
 {
 	int retry;
 	int ret = -1, i;
@@ -391,12 +351,9 @@ int GTx3Update::cfg_update()
 		return -5;
 
 	//before update config,read curr config version
-	dev->Read(0x8050,cfg_ver_before,3);
+	dev->Read(CFG_START_ADDR,cfg_ver_before,3);
 	gdix_dbg("Before update,cfg version is 0x%02x 0x%02x 0x%02x\n",
 		cfg_ver_before[0],cfg_ver_before[1],cfg_ver_before[2]);
-	unsigned char cks = cfg_ver_before[0]+cfg_ver_before[1]+cfg_ver_before[2];
-	if(cks != 0)
-		gdix_err("Warning : cfg before cks err!\n");
 
 	/* Start load config */
 	fw_data = image->GetFirmwareData();
@@ -429,11 +386,30 @@ int GTx3Update::cfg_update()
 
 	if(findMatchCfg)
 	{
+		//wait untill ic is free
+		retry = 10;
+		do {
+			ret = dev->Read(CMD_ADDR, temp_buf, 1);
+			if (ret < 0) {
+				gdix_err("Failed read cfg cmd, ret = %d\n", ret);
+				return ret;
+			}
+			if (temp_buf[0] == 0xff)
+				break;
+			gdix_info("0x%x value is 0x%x != 0xff, retry\n", CMD_ADDR, temp_buf[0]);
+			usleep(10000);
+		} while (--retry);
+		if (!retry) {
+			gdix_err("Reg 0x%x != 0xff\n", CMD_ADDR);
+			ret = -2;
+			goto update_err;
+		}
+
 		//tell ic i want to send cfg
 		temp_buf[0] = 0x80;
 		temp_buf[1] = 0;
 		temp_buf[2] = 0x80;
-		ret = dev->Write(0x8040,temp_buf, 3) ;
+		ret = dev->Write(CMD_ADDR,temp_buf, 3) ;
 		if (ret < 0) {
 			gdix_err("Failed write send cfg cmd\n");
 			return ret;
@@ -443,26 +419,26 @@ int GTx3Update::cfg_update()
 		usleep(250000);
 		retry = GDIX_RETRY_TIMES;
 		do {
-			ret = dev->Read(0x8040, temp_buf, 1);
-			gdix_dbg("Wait 0x8040 == 0x82...\n");
+			ret = dev->Read(CMD_ADDR, temp_buf, 1);
+			gdix_dbg("Wait CMD_ADDR == 0x82...\n");
 			if (ret < 0) {
-				gdix_err("Failed read 0x%x, ret = %d\n", 0x8040, ret);
+				gdix_err("Failed read 0x%x, ret = %d\n", CMD_ADDR, ret);
 			} 
 			if (temp_buf[0] == 0x82)
 				break;
-			gdix_info("0x%x value is 0x%x != 0x82, retry\n", 0x8040, temp_buf[0]);
+			gdix_info("0x%x value is 0x%x != 0x82, retry\n", CMD_ADDR, temp_buf[0]);
 			usleep(30000);
 		} while (--retry);
 
 		if (!retry) {
-			gdix_err("Reg 0x%x != 0x82\n", 0x8040);
+			gdix_err("Reg 0x%x != 0x82\n", CMD_ADDR);
 			ret = -2;
 			goto update_err;
 		}
-		gdix_dbg("Wait 0x8040 == 0x82 success.\n");
+		gdix_dbg("Wait CMD_ADDR == 0x82 success.\n");
 
 		/* Start load config */
-		ret = dev->Write(0x8050, &fw_data[cfg_offset],sub_cfg_len) ;
+		ret = dev->Write(CFG_START_ADDR, &fw_data[cfg_offset],sub_cfg_len) ;
 		if (ret < 0) {
 			gdix_err("Failed write cfg to xdata, ret=%d\n", ret);
 			goto update_err;
@@ -471,7 +447,7 @@ int GTx3Update::cfg_update()
 
 		//tell ic cfg is ready in xdata
 		temp_buf[0] = 0x83;
-		ret = dev->Write(0x8040,temp_buf, 1) ;
+		ret = dev->Write(CMD_ADDR,temp_buf, 1) ;
 		if (ret < 0) {
 			gdix_err("Failed write send cfg finish cmd\n");
 			return ret;
@@ -481,34 +457,28 @@ int GTx3Update::cfg_update()
 		usleep(80000);
 		retry = GDIX_RETRY_TIMES;
 		do {
-			ret = dev->Read(0x8040, temp_buf, 1);
-			gdix_dbg("Wait 0x8040 == 0xFF...\n");
+			ret = dev->Read(CMD_ADDR, temp_buf, 1);
+			gdix_dbg("Wait CMD_ADDR == 0xFF...\n");
 			if (ret < 0) {
-				gdix_err("Failed read 0x%x, ret = %d\n", 0x8040, ret);
+				gdix_err("Failed read 0x%x, ret = %d\n", CMD_ADDR, ret);
 			} 
 			if (temp_buf[0] == 0xff)
 				break;
-			gdix_info("0x%x value is 0x%x != 0xFF, retry\n", 0x8040, temp_buf[0]);
+			gdix_info("0x%x value is 0x%x != 0xFF, retry\n", CMD_ADDR, temp_buf[0]);
 			usleep(30000);
 		} while (--retry);
 
 		if (!retry) {
-			gdix_err("Reg 0x%x != 0xFF\n", 0x8040);
+			gdix_err("Reg 0x%x != 0xFF\n", CMD_ADDR);
 			ret = -2;
 			goto update_err;
 		}
-		gdix_dbg("Wait 0x8040 == 0xFF success.\n");
+		gdix_dbg("Wait CMD_ADDR == 0xFF success.\n");
 
 		//before update config,read curr config version
-		dev->Read(0x8050,cfg_ver_after,3);
+		dev->Read(CFG_START_ADDR,cfg_ver_after,3);
 		gdix_dbg("After update,cfg version is 0x%02x 0x%02x 0x%02x\n",
 			cfg_ver_after[0],cfg_ver_after[1],cfg_ver_after[2]);
-		unsigned char cks = cfg_ver_after[0]+cfg_ver_after[1]+cfg_ver_after[2];
-		if(cks != 0)
-		{	
-			gdix_err("Error : cfg after cks err!\n");
-			return -6;
-		}
 
 		return 0;
 	}

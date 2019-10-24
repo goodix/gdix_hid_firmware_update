@@ -35,14 +35,17 @@
 #include "gtx2/gtx2.h"
 #include "gtx3/gtx3.h"
 #include "gtx5/gtx5.h"
+#include "gtx8/gtx8.h"
 #include "firmware_image.h"
 #include "gtx2/gtx2_firmware_image.h"
 #include "gtx3/gtx3_firmware_image.h"
 #include "gtx5/gtx5_firmware_image.h"
+#include "gtx8/gtx8_firmware_image.h"
 #include "gt_update.h"
 #include "gtx2/gtx2_update.h"
 #include "gtx3/gtx3_update.h"
 #include "gtx5/gtx5_update.h"
+#include "gtx8/gtx8_update.h"
 
 #define RAM_BUFFER_SIZE	    4096
 
@@ -55,6 +58,7 @@
 #define TYPE_PHOENIX 0
 #define TYPE_NANJING 1
 #define TYPE_MOUSEPAD 2
+#define TYPE_NORMANDYL 3
 
 bool pdebug = false;
 
@@ -102,6 +106,7 @@ int main(int argc, char **argv)
 	regex_t reg_x3xx;
 	regex_t reg_x5xx;
 	regex_t reg_x2xx;
+	regex_t reg_x8xx;
 	regmatch_t pamtch[1];//match container
 
     char *deviceName = NULL;
@@ -227,6 +232,7 @@ int main(int argc, char **argv)
 		regcomp(&reg_x3xx,"^[0-9]3[0-9]{2}",REG_EXTENDED);
 		regcomp(&reg_x5xx,"^[0-9]5[0-9]{2}",REG_EXTENDED);
 		regcomp(&reg_x2xx,"^[0-9]2[0-9]{2}",REG_EXTENDED);
+		regcomp(&reg_x8xx,"^[0-9]8[0-9]{2}",REG_EXTENDED);
 
 		if(REG_NOERROR == regexec(&reg_x3xx,productionTypeName,1,pamtch,0))
 			chipType = TYPE_PHOENIX;//7388 match
@@ -234,12 +240,15 @@ int main(int argc, char **argv)
 			chipType = TYPE_NANJING;//8589 match
 		else if(REG_NOERROR == regexec(&reg_x2xx,productionTypeName,1,pamtch,0))
 			chipType = TYPE_MOUSEPAD;//7288 match
+		else if(REG_NOERROR == regexec(&reg_x8xx,productionTypeName,1,pamtch,0))
+			chipType = TYPE_NORMANDYL;//7863 match
 		else
 			chipType = -1;//no match
 
 		regfree(&reg_x3xx);
 		regfree(&reg_x5xx);
 		regfree(&reg_x2xx);
+		regfree(&reg_x8xx);
 	}
 
 	if(chipType < 0)
@@ -269,6 +278,13 @@ int main(int argc, char **argv)
 		fw_image = new GTX3FirmwareImage;
 		gt_update = new GTx3Update;
 		firmware_flag = 0x844;//update type:0x02,0x03,0x03,0x10;
+	}
+	else if(chipType == TYPE_NORMANDYL)
+	{
+		gt_model = new GTx8Device;
+		fw_image = new GTX8FirmwareImage;
+		gt_update = new GTx8Update;
+		firmware_flag = 0xffe;//update type:0x02,0x03,0x03,0x10;
 	}
 	else
 	{

@@ -303,8 +303,16 @@ int GTx2Update::fw_update(unsigned int firmware_flag)
 	} while(--retry);
 	usleep(300000);
 	return 0;
-	ret = -5; /* No valid firmware data found */
+
 update_err:
+	gdix_dbg("reset ic\n");
+	retry = 3;
+	do {
+		if (dev->Write(buf_restart, sizeof(buf_restart)) < 0)
+			gdix_dbg("Failed write restart command\n");
+		usleep(20000);
+	} while(--retry);
+	usleep(300000);
 	return ret;
 }
 
