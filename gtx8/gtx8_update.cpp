@@ -41,6 +41,7 @@
 #define CFG_START_ADDR 0X60DC
 #define CMD_ADDR       0x60cc
 
+
 GTx8Update::GTx8Update()
 {
 	is_cfg_flashed_with_isp = false;
@@ -238,7 +239,6 @@ int GTx8Update::fw_update(unsigned int firmware_flag)
 		}
 	}
 
-update_err:
 	/* reset IC */
 	gdix_dbg("reset ic\n");
 	retry = 3;
@@ -246,18 +246,22 @@ update_err:
 		ret = dev->Write(buf_restart, sizeof(buf_restart));
 		if (ret < 0)
 			gdix_dbg("Failed write restart command, ret=%d\n", ret);
-		else 
-			break;
-		usleep(30000);
+		usleep(20000);
 	} while(--retry);
-	if (retry) {
-		gdix_dbg("reset ic success\n");
-		ret = 0;
-	} else {
-		gdix_err("reset ic failed\n");
-	}
-	usleep(200000);
+	usleep(300000);
+	return 0;
 
+update_err:
+	/* reset IC */
+	gdix_dbg("reset ic\n");
+	retry = 3;
+	do {
+		if (dev->Write(buf_restart, sizeof(buf_restart)) < 0)
+			gdix_dbg("Failed write restart command\n");
+		usleep(20000);
+	} while(--retry);
+
+	usleep(300000);
 	return ret;
 }
 

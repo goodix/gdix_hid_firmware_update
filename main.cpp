@@ -284,7 +284,7 @@ int main(int argc, char **argv)
 		gt_model = new GTx8Device;
 		fw_image = new GTX8FirmwareImage;
 		gt_update = new GTx8Update;
-		firmware_flag = 0xffe;//update type:0x02,0x03,0x03,0x10;
+		firmware_flag = 0x0C;//update type:0x02,0x03;
 	}
 	else
 	{
