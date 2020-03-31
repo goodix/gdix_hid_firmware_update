@@ -32,6 +32,7 @@ public:
 
     virtual int Write(unsigned short addr, const unsigned char *buf, unsigned int len){return 0;}
     virtual int Write(const unsigned char *buf, unsigned int len){return 0;}
+    virtual int WriteSpeCmd(const unsigned char *buf, unsigned int len){return 0;}
 
     virtual int GetFirmwareProps(const char *deviceName, char *props_buf, int len){return 0;}
     virtual int GetFirmwareVersionMajor() { return 0; }

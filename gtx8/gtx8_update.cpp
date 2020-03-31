@@ -137,6 +137,7 @@ int GTx8Update::fw_update(unsigned int firmware_flag)
 	unsigned char buf_switch_to_patch[] = {0x00, 0x10, 0x00, 0x00, 0x01, 0x01};
 	unsigned char buf_start_update[] = {0x00, 0x11, 0x00, 0x00, 0x01, 0x01};
 	unsigned char buf_restart[] = {0x0E, 0x13, 0x00, 0x00, 0x01, 0x01};
+	unsigned char buf_switch_ptp_mode[] = {0x03, 0x03, 0x00, 0x00, 0x01, 0x01};
 
 	int sub_fw_num = 0;
 	unsigned char sub_fw_type;
@@ -244,24 +245,38 @@ int GTx8Update::fw_update(unsigned int firmware_flag)
 	retry = 3;
 	do {
 		ret = dev->Write(buf_restart, sizeof(buf_restart));
-		if (ret < 0)
-			gdix_dbg("Failed write restart command, ret=%d\n", ret);
+		if (ret >= 0)
+			break;
 		usleep(20000);
 	} while(--retry);
+	if (retry == 0 && ret < 0)
+		gdix_dbg("Failed write restart command, ret=%d\n", ret);
+	else
+		ret = 0;
+
 	usleep(300000);
-	return 0;
+	
+	if (dev->WriteSpeCmd(buf_switch_ptp_mode, sizeof(buf_switch_ptp_mode)) < 0) {
+		gdix_err("Failed switch to ptp mode\n");
+	}
+	return ret;
 
 update_err:
 	/* reset IC */
 	gdix_dbg("reset ic\n");
 	retry = 3;
 	do {
-		if (dev->Write(buf_restart, sizeof(buf_restart)) < 0)
-			gdix_dbg("Failed write restart command\n");
+		if (dev->Write(buf_restart, sizeof(buf_restart)) >= 0)
+			break;
 		usleep(20000);
 	} while(--retry);
+	if (retry == 0 && ret < 0)
+		gdix_dbg("Failed write restart command, ret=%d\n", ret);
 
 	usleep(300000);
+	if (dev->WriteSpeCmd(buf_switch_ptp_mode, sizeof(buf_switch_ptp_mode)) < 0) {
+		gdix_err("Failed switch to ptp mode\n");
+	}
 	return ret;
 }
 

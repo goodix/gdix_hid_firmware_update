@@ -272,6 +272,39 @@ error:
          return ret;
  }
  
+ /* 
+  * write special data to IC directly buf_len <= 65 
+  * return < 0 failed
+ */
+ int GTx5Device::WriteSpeCmd(const unsigned char *buf,
+                  unsigned int len)
+ {
+     unsigned char temp_buf[m_outputReportSize];
+     int ret;
+     int retry = GDIX_RETRY_TIMES;
+     if (!m_deviceOpen)
+         return -1;
+     if (m_outputReportSize < len)
+         return -1;
+         memset(temp_buf, 0, m_outputReportSize);
+         memcpy(&temp_buf[0], buf, len);
+     gdix_dbg_array(temp_buf, len);
+         do {
+         ret = ioctl(m_fd, HIDIOCSFEATURE(len), temp_buf);
+         if (ret < 0) {
+             if (!m_deviceOpen || m_bCancel) {
+                 gdix_dbg("Operation beCancled or m_fd closed\n");
+                 break;
+             }
+             gdix_dbg("failed set feature, retry: ret=%d,retry:%d\n", ret,retry);
+             usleep(10000);
+         } else {
+             break;
+         }
+         } while(--retry);
+         return ret;
+ }
+
  int GTx5Device::SetBasicProperties()
  {
      int ret;

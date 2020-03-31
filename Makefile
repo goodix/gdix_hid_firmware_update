@@ -8,7 +8,7 @@ UPDATESRC = main.cpp gt_update.cpp firmware_image.cpp \
 
 UPDATEOBJ = $(UPDATESRC:.cpp=.o)
 PROGNAME = gdixupdate
-STATIC_BUILD ?= n
+STATIC_BUILD ?= y
 ifeq ($(STATIC_BUILD), y)
 	LDFLAGS += -static
 endif

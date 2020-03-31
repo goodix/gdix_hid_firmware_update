@@ -51,6 +51,7 @@
     int GetReport(unsigned char reportId, unsigned char *buf);
     int Write(unsigned short addr, const unsigned char *buf, unsigned int len);
     int Write(const unsigned char *buf, unsigned int len);
+    int WriteSpeCmd(const unsigned char *buf, unsigned int len);
     int GetFirmwareProps(const char *deviceName, char *props_buf, int len);
     int GetFirmwareVersionMajor() { return m_firmwareVersionMajor; }
     int GetFirmwareVersionMinor() { return m_firmwareVersionMinor; }

@@ -53,7 +53,7 @@
 
 #define VERSION_MAJOR		1
 #define VERSION_MINOR		7
-#define VERSION_SUBMINOR	0
+#define VERSION_SUBMINOR	1
 
 #define TYPE_PHOENIX 0
 #define TYPE_NANJING 1
@@ -223,6 +223,22 @@ int main(int argc, char **argv)
 		{
 			gdix_dbg("pid match mousepad pid 0fxx\n");
 			chipType = TYPE_MOUSEPAD;
+		}
+		regfree(&reg_pid);
+	
+		regcomp(&reg_pid,"^01[eE][0-7]$",REG_EXTENDED);//7863 windows pid 01e0~01e7
+		if(REG_NOERROR == regexec(&reg_pid,pid,1,pamtch,0))
+		{
+			gdix_dbg("pid match GT7863 pid 01e0_01e7\n");
+			chipType = TYPE_NORMANDYL;
+		}
+		regfree(&reg_pid);
+	
+		regcomp(&reg_pid,"^0[dD][0-7][0-9A-Fa-f]$",REG_EXTENDED);//7863 chrome pid 0d00~0d7f
+		if(REG_NOERROR == regexec(&reg_pid,pid,1,pamtch,0))
+		{
+			gdix_dbg("pid match GT7863 pid 0d00_0d7f\n");
+			chipType = TYPE_NORMANDYL;
 		}
 		regfree(&reg_pid);
 		
