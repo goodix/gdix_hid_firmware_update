@@ -33,12 +33,13 @@
  int GTx8Device::SetBasicProperties()
  {
     int ret;
-    unsigned char fw_info[25] = {0};
+    unsigned char fw_info[72] = {0};
     m_firmwareVersionMajor = 20;
     m_firmwareVersionMinor = 20;
     m_sensorID = 0xF;
     unsigned char cfg_ver = 0;
     int retry = 10;
+    unsigned char chksum;
 
      if (!m_deviceOpen) {
          gdix_err("Please open device first\n");
@@ -64,6 +65,13 @@
      gdix_dbg("0x%02x,0x%02x,0x%02x,0x%02x,0x%02x\n",fw_info[17],fw_info[18],fw_info[19],fw_info[20],fw_info[21]);
      if (!retry)
          return -1;
+    
+     /*check fw version*/
+     chksum = ChecksumU8(fw_info,sizeof(fw_info));
+     if (chksum) {
+     	gdix_err("fw version check sum error:%d\n",chksum);
+	return -2;
+     }
      
     memcpy(m_pid, &fw_info[9], 4);
 	m_pid[4] = '\0';

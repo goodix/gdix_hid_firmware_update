@@ -36,6 +36,7 @@
     m_sensorID = 0xF;
     unsigned char cfg_ver = 0;
     int retry = 10;
+    unsigned char chksum;
 
      if (!m_deviceOpen) {
          gdix_err("Please open device first\n");
@@ -60,6 +61,12 @@
      if (!retry)
          return -1;
      
+     /*check fw version*/
+     chksum = ChecksumU8(fw_info,sizeof(fw_info));
+     if (chksum) {
+     	gdix_err("fw version check sum error:%d\n",chksum);
+	return -2;
+     }
     memcpy(m_pid, fw_info, 4);
 	m_pid[4] = '\0';
 	gdix_dbg("pid:%s\n",m_pid);

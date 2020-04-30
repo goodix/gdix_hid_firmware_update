@@ -48,6 +48,7 @@
     GTx5Device();
     int Open(const char *filename);
     int Read(unsigned short addr, unsigned char *buf, unsigned int len);
+    int ReadPkg(unsigned short addr, unsigned char *buf, unsigned int len);
     int GetReport(unsigned char reportId, unsigned char *buf);
     int Write(unsigned short addr, const unsigned char *buf, unsigned int len);
     int Write(const unsigned char *buf, unsigned int len);
@@ -59,6 +60,7 @@
     unsigned char GetSensorID(){return m_sensorID;}
     int QueryBasicProperties(){return 0;};
     int SetBasicProperties();
+    unsigned char ChecksumU8(unsigned char *data, int len);
     void Close();
     int GetFd() { return m_fd; }
     virtual ~GTx5Device(){} 

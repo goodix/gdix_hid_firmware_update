@@ -126,7 +126,7 @@ error:
          }
      }
  }
- int GTx5Device::Read(unsigned short addr, unsigned char *buf, unsigned int len)
+ int GTx5Device::ReadPkg(unsigned short addr, unsigned char *buf, unsigned int len)
  {
      int ret;
      int retry = 0;
@@ -192,6 +192,35 @@ error:
      else
          return len;
  }
+
+ int GTx5Device::Read(unsigned short addr, unsigned char *buf, unsigned int len)
+ {
+	 int ret = 0;
+	 int i = 0;
+	 unsigned short tmp_addr;
+	 int pkg_size = m_inputReportSize - 10;
+	 int pkg_num;
+	 int read_len;
+	 int code_len = len;
+	
+	 pkg_num = code_len/pkg_size +1;
+	 tmp_addr = addr;
+	 read_len = pkg_size;
+	 for (i=0; i<pkg_num; i++) {
+	 	if (read_len > code_len)
+			read_len = code_len;
+		/*read data*/
+		ret = ReadPkg(tmp_addr, &buf[tmp_addr-addr], read_len);
+		if (ret < 0)
+			return ret;
+		tmp_addr += read_len;
+		code_len -= read_len;
+		if (code_len <= 0)
+			break;
+	 }
+	 return ret;
+ }
+
  int GTx5Device::Write(unsigned short addr, const unsigned char *buf,
                   unsigned int len)
  {
@@ -335,3 +364,11 @@ error:
      return 0;  
  }
 
+unsigned char GTx5Device::ChecksumU8(unsigned char *data, int len)
+{
+	unsigned char chksum = 0;
+	int i = 0;
+	for (i=0; i< len; i++)
+		chksum +=data[i];
+	return chksum;
+}

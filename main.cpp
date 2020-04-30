@@ -53,7 +53,7 @@
 
 #define VERSION_MAJOR		1
 #define VERSION_MINOR		7
-#define VERSION_SUBMINOR	1
+#define VERSION_SUBMINOR	2
 
 #define TYPE_PHOENIX 0
 #define TYPE_NANJING 1
