@@ -49,11 +49,11 @@
 
 #define RAM_BUFFER_SIZE	    4096
 
-#define GTPUPDATE_GETOPTS	"hfd:pvt:s:im"
+#define GTPUPDATE_GETOPTS	"hfd:pvt:s:imc"
 
 #define VERSION_MAJOR		1
 #define VERSION_MINOR		7
-#define VERSION_SUBMINOR	2
+#define VERSION_SUBMINOR	4
 
 #define TYPE_PHOENIX 0
 #define TYPE_NANJING 1
@@ -74,6 +74,7 @@ void printHelp(const char *prog_name)
 	fprintf(stdout, "\t-s, --series\t device series type number like 8589 or 7288.\n");
 	fprintf(stdout, "\t-i, --info\t print detail info while the tool is running.\n");
 	fprintf(stdout, "\t-m, --module\t print module/sensor ID.\n");
+	fprintf(stdout, "\t-c, --cfgversion\t print module/current cfg version.\n");
 }
 
 void printVersion()
@@ -124,10 +125,12 @@ int main(int argc, char **argv)
 		{"series",1,NULL,'s'},
 		{"info",0,NULL,'i'},
 		{"module",0,NULL,'m'},
+		{"cfgverion",0,NULL,'c'},
 		{0, 0, 0, 0},
 	};
 	bool printFirmwareProps = false;
 	bool printModuleId = false;
+	bool printCfgVersion = false;
 	while ((opt = getopt_long(argc, argv, GTPUPDATE_GETOPTS, long_options, &index)) != -1) {
 		switch (opt) {
 			case 'h':
@@ -160,6 +163,9 @@ int main(int argc, char **argv)
 			case 'm':
 				printModuleId = true;
 				break;
+			case 'c':
+				printCfgVersion = true;
+				break;
 			default:
 				break;
 
@@ -175,7 +181,7 @@ int main(int argc, char **argv)
 		gdix_err("please input pid or product type\n");
 		return -1;
 	}
-	if(!printModuleId && !printFirmwareProps && NULL == firmwareName)
+	if(!printCfgVersion && !printModuleId && !printFirmwareProps && NULL == firmwareName)
 	{
 		gdix_err("file name not found\n");
 		return -1;
@@ -334,6 +340,12 @@ int main(int argc, char **argv)
 		gdix_err("failed open device:%s\n", deviceName);
 		delete gt_model;
         return -1;
+	}
+
+	if (printCfgVersion) {
+		gt_model->GetCfgVersion();
+		delete gt_model;
+		return 0;
 	}
 
 	if (printModuleId) {

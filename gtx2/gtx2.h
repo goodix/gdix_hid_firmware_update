@@ -57,6 +57,7 @@ class GTx2Device : public GTx5Device
 public:
     int QueryBasicProperties(){ return 0; };
     int SetBasicProperties();
+    int GetCfgVersion();
     virtual ~GTx2Device(){}
 };
 #endif

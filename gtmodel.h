@@ -39,6 +39,7 @@ public:
     virtual int GetFirmwareVersionMinor() { return 0; }
     virtual unsigned char *GetProductID() { return 0; }
     virtual unsigned char GetSensorID(){return -1;}
+    virtual int GetCfgVersion() {return 0;}
     virtual int QueryBasicProperties(){return 0;}
     virtual int SetBasicProperties(){return 0;}
     virtual void Close(){return;}
