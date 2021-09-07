@@ -76,7 +76,7 @@ int GTx5Update::Run(void *para)
 
 int GTx5Update::load_sub_firmware(unsigned int flash_addr,unsigned char *fw_data, unsigned int len)
 {
-    int ret;
+    int ret = -1;
 	int retry;
 	unsigned int i;
 	unsigned int unitlen = 0;

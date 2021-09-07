@@ -127,7 +127,7 @@ int GTx2Update::Run(void *para)
 
 int GTx2Update::load_sub_firmware(unsigned int flash_addr,unsigned char *fw_data, unsigned int len)
 {
-    int ret;
+    int ret = -1;
 	int retry;
 	unsigned int i;
 	unsigned int unitlen = 0;
@@ -324,7 +324,7 @@ int GTx2Update::cfg_update()
 	unsigned char *fw_data = NULL;
 	unsigned char cfg_ver_after;
 	unsigned char cfg_ver_before;
-	unsigned char cfg_ver_infile;
+	unsigned char cfg_ver_infile = 0;
 	bool findMatchCfg = false;
 	unsigned char* cfg0x8050 = NULL;//2 frame of config in memory
 	unsigned char* cfg0xBF7B = NULL;
@@ -398,7 +398,7 @@ int GTx2Update::cfg_update()
 	cfg_ver_after = temp_buf[0];
 	gdix_dbg("After update,cfg version is %d\n",cfg_ver_after);
 
-	if(cfg_ver_after != cfg_ver_infile){
+	if(cfg_ver_after != cfg_ver_infile) {
 		gdix_dbg("After update,cfg version is no equal to cg version in file.\n");
 		ret = -1;
 		goto update_err;

@@ -46,6 +46,8 @@ public:
 
 	virtual unsigned int GetFirmwareSize() { return m_firmwareSize; }
 	virtual unsigned char *GetProductID() { return m_pid; }
+	virtual unsigned char *GetVendorID() { return 0; }
+	virtual unsigned int GetConfigID() { return 0; }
 	virtual int GetFirmwareVersionMajor() { return m_firmwareVersionMajor; }
 	virtual int GetFirmwareVersionMinor() { return m_firmwareVersionMinor; }
 	virtual unsigned char *GetFirmwareData() {
@@ -59,11 +61,13 @@ public:
 	virtual int GetFirmwareSubFwNum(){return 0;}
 	virtual int GetFirmwareSubFwInfoOffset(){return 0;}
 	virtual int GetFirmwareSubFwDataOffset(){return 0;}
+	virtual void *GetFirmwareSummary() {return NULL;}
 	virtual int GetConfigSubCfgNum();
 	virtual int GetConfigSubCfgInfoOffset();
 	virtual int GetConfigSubCfgDataOffset();
 	virtual bool IsOpened(){return m_initialized;}
 	virtual bool HasConfig(){return hasConfig;}
+	virtual int GetConfigSize() {return m_configSize;}
 	virtual updateFlag GetUpdateFlag();
 protected:
 	virtual int GetDataFromFile(const char* filename);

@@ -107,7 +107,7 @@ int GTx8Update::Run(void *para)
 	 */
 	if(this->is_cfg_flashed_with_isp == false &&
 		flag & NEED_UPDATE_CONFIG) {
-		gdix_dbg("Update config interactively");
+		gdix_dbg("Update config interactively\n");
 		retry = 0;
 		do {
 			ret = cfg_update();
@@ -372,7 +372,7 @@ int GTx8Update::cfg_update()
 	//before update config,read curr config version
 	dev->Read(CFG_START_ADDR,cfg_ver_before,3);
 	gdix_dbg("Before update,cfg version is 0x%02x 0x%02x 0x%02x\n",
-		cfg_ver_before[0],cfg_ver_before[1],cfg_ver_before[2]);
+		cfg_ver_before[0], cfg_ver_before[1], cfg_ver_before[2]);
 
 	/* Start load config */
 	fw_data = image->GetFirmwareData();
@@ -390,21 +390,20 @@ int GTx8Update::cfg_update()
 
 		sub_cfg_len = (fw_data[sub_cfg_info_pos + 1] << 8) | 
 			       fw_data[sub_cfg_info_pos + 2];
-		
-		if(dev->GetSensorID() == sub_cfg_id){
+
+		if (dev->GetSensorID() == sub_cfg_id) {
 			findMatchCfg = true;
 			cfg = &fw_data[cfg_offset];
 			cfg_ver_infile = cfg[0];
-			gdix_info("Find a cfg match sensorID:ID=%d,cfg version=%d\n",
-				  dev->GetSensorID(),cfg_ver_infile);
+			gdix_info("Find a cfg match sensorID:ID=%d, cfg version=%d\n",
+					dev->GetSensorID(), cfg_ver_infile);
 			break;
 		}
 		cfg_offset += sub_cfg_len;
 		sub_cfg_info_pos += 3;
 	}
 
-	if(findMatchCfg)
-	{
+	if(findMatchCfg) {
 		//wait untill ic is free
 		retry = 10;
 		do {
@@ -457,7 +456,7 @@ int GTx8Update::cfg_update()
 		gdix_dbg("Wait CMD_ADDR == 0x82 success.\n");
 
 		/* Start load config */
-		ret = dev->Write(CFG_START_ADDR, &fw_data[cfg_offset],sub_cfg_len) ;
+		ret = dev->Write(CFG_START_ADDR, &fw_data[cfg_offset], sub_cfg_len) ;
 		if (ret < 0) {
 			gdix_err("Failed write cfg to xdata, ret=%d\n", ret);
 			goto update_err;
@@ -466,7 +465,7 @@ int GTx8Update::cfg_update()
 
 		//tell ic cfg is ready in xdata
 		temp_buf[0] = 0x83;
-		ret = dev->Write(CMD_ADDR,temp_buf, 1) ;
+		ret = dev->Write(CMD_ADDR, temp_buf, 1) ;
 		if (ret < 0) {
 			gdix_err("Failed write send cfg finish cmd\n");
 			return ret;
@@ -495,9 +494,9 @@ int GTx8Update::cfg_update()
 		gdix_dbg("Wait CMD_ADDR == 0xFF success.\n");
 
 		//before update config,read curr config version
-		dev->Read(CFG_START_ADDR,cfg_ver_after,3);
+		dev->Read(CFG_START_ADDR, cfg_ver_after, 3);
 		gdix_dbg("After update,cfg version is 0x%02x 0x%02x 0x%02x\n",
-			cfg_ver_after[0],cfg_ver_after[1],cfg_ver_after[2]);
+			cfg_ver_after[0], cfg_ver_after[1], cfg_ver_after[2]);
 
 		return 0;
 	}

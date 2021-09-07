@@ -47,10 +47,10 @@
  public:
     GTx5Device();
     int Open(const char *filename);
-    int Read(unsigned short addr, unsigned char *buf, unsigned int len);
-    int ReadPkg(unsigned short addr, unsigned char *buf, unsigned int len);
+    int Read(unsigned int addr, unsigned char *buf, unsigned int len);
+    int ReadPkg(unsigned int addr, unsigned char *buf, unsigned int len);
     int GetReport(unsigned char reportId, unsigned char *buf);
-    int Write(unsigned short addr, const unsigned char *buf, unsigned int len);
+    int Write(unsigned int addr, const unsigned char *buf, unsigned int len);
     int Write(const unsigned char *buf, unsigned int len);
     int WriteSpeCmd(const unsigned char *buf, unsigned int len);
     int GetFirmwareProps(const char *deviceName, char *props_buf, int len);

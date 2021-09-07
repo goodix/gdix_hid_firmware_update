@@ -41,9 +41,9 @@ int GTx2Device::SetBasicProperties()
 {
 	int ret;
 	unsigned char fw_info[12] = {0};
-        m_firmwareVersionMajor = 20;
+    m_firmwareVersionMajor = 20;
 	m_firmwareVersionMinor = 20;
-        m_sensorID = 2;
+    m_sensorID = 2;
 	unsigned char cfg_ver = 0;
 	int retry = 10;
 
@@ -51,7 +51,7 @@ int GTx2Device::SetBasicProperties()
 		gdix_err("Please open device first\n");
 		return -1;
 	}
-	
+
 	do {
 		ret = Read(0x8050,&cfg_ver,1);
 		if(ret < 0){
@@ -73,7 +73,7 @@ int GTx2Device::SetBasicProperties()
 	m_pid[4] = '\0';
 	gdix_dbg("pid:%s\n",m_pid);
 	m_sensorID = fw_info[10]&0x0f;
-	gdix_dbg("sensorID:%d\n",m_sensorID);
+	gdix_dbg("sensorID:%d\n", m_sensorID);
 
 	if (!memcmp(m_pid, "7288", 4)) {
 		m_firmwareVersionMajor = fw_info[5];

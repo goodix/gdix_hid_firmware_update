@@ -126,7 +126,7 @@ error:
          }
      }
  }
- int GTx5Device::ReadPkg(unsigned short addr, unsigned char *buf, unsigned int len)
+ int GTx5Device::ReadPkg(unsigned int addr, unsigned char *buf, unsigned int len)
  {
      int ret;
      int retry = 0;
@@ -193,7 +193,7 @@ error:
          return len;
  }
 
- int GTx5Device::Read(unsigned short addr, unsigned char *buf, unsigned int len)
+ int GTx5Device::Read(unsigned int addr, unsigned char *buf, unsigned int len)
  {
 	 int ret = 0;
 	 int i = 0;
@@ -221,7 +221,7 @@ error:
 	 return ret;
  }
 
- int GTx5Device::Write(unsigned short addr, const unsigned char *buf,
+ int GTx5Device::Write(unsigned int addr, const unsigned char *buf,
                   unsigned int len)
  {
      unsigned char tmpBuf[65] =  {0x0e,_I2C_DIRECT_RW, 0, 0, 5};
@@ -274,31 +274,31 @@ error:
  int GTx5Device::Write(const unsigned char *buf,
                   unsigned int len)
  {
-     unsigned char temp_buf[m_outputReportSize];
+     unsigned char temp_buf[65];
      int ret;
      int retry = GDIX_RETRY_TIMES;
      if (!m_deviceOpen)
          return -1;
-     if (m_outputReportSize < len)
+     if (sizeof(temp_buf) < len)
          return -1;
-         memset(temp_buf, 0, m_outputReportSize);
-         memcpy(&temp_buf[0], buf, len);
-         temp_buf[0] = 0x0E;
-     gdix_dbg_array(temp_buf, len);
-         do {
-         ret = ioctl(m_fd, HIDIOCSFEATURE(len), temp_buf);
-         if (ret < 0) {
-             if (!m_deviceOpen || m_bCancel) {
-                 gdix_dbg("Operation beCancled or m_fd closed\n");
-                 break;
-             }
-             gdix_dbg("failed set feature, retry: ret=%d,retry:%d\n", ret,retry);
-             usleep(10000);
-         } else {
+    memset(temp_buf, 0, sizeof(temp_buf));
+    memcpy(&temp_buf[0], buf, len);
+    temp_buf[0] = 0x0E;
+    gdix_dbg_array(temp_buf, len);
+    do {
+        ret = ioctl(m_fd, HIDIOCSFEATURE(len), temp_buf);
+        if (ret < 0) {
+            if (!m_deviceOpen || m_bCancel) {
+                gdix_dbg("Operation beCancled or m_fd closed\n");
+                break;
+            }
+            gdix_dbg("failed set feature, retry: ret=%d,retry:%d\n", ret, retry);
+            usleep(10000);
+        } else {
              break;
-         }
-         } while(--retry);
-         return ret;
+        }
+    } while(--retry);
+    return ret;
  }
  
  /* 
@@ -308,30 +308,30 @@ error:
  int GTx5Device::WriteSpeCmd(const unsigned char *buf,
                   unsigned int len)
  {
-     unsigned char temp_buf[m_outputReportSize];
+     unsigned char temp_buf[65];
      int ret;
      int retry = GDIX_RETRY_TIMES;
      if (!m_deviceOpen)
          return -1;
-     if (m_outputReportSize < len)
-         return -1;
-         memset(temp_buf, 0, m_outputReportSize);
-         memcpy(&temp_buf[0], buf, len);
-     gdix_dbg_array(temp_buf, len);
-         do {
-         ret = ioctl(m_fd, HIDIOCSFEATURE(len), temp_buf);
-         if (ret < 0) {
-             if (!m_deviceOpen || m_bCancel) {
-                 gdix_dbg("Operation beCancled or m_fd closed\n");
-                 break;
-             }
-             gdix_dbg("failed set feature, retry: ret=%d,retry:%d\n", ret,retry);
-             usleep(10000);
-         } else {
-             break;
-         }
-         } while(--retry);
-         return ret;
+     if (sizeof(temp_buf) < len)
+        return -1;
+    memset(temp_buf, 0, sizeof(temp_buf));
+    memcpy(&temp_buf[0], buf, len);
+    gdix_dbg_array(temp_buf, len);
+    do {
+        ret = ioctl(m_fd, HIDIOCSFEATURE(len), temp_buf);
+        if (ret < 0) {
+            if (!m_deviceOpen || m_bCancel) {
+                gdix_dbg("Operation beCancled or m_fd closed\n");
+                break;
+            }
+            gdix_dbg("failed set feature, retry: ret=%d,retry:%d\n", ret,retry);
+            usleep(10000);
+        } else {
+            break;
+        }
+    } while(--retry);
+    return ret;
  }
 
  int GTx5Device::SetBasicProperties()
