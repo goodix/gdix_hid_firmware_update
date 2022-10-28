@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- #ifndef _GTX8_H_
- #define _GTX8_H_
+#ifndef _GTX8_H_
+#define _GTX8_H_
 
- #include <string>
- #include <memory.h>
- #include "../gtx3/gtx3.h"
- 
- class GTx8Device : public GTx3Device
- {
- public:
-    GTx8Device();
-    virtual ~GTx8Device();
+#include "../gtx3/gtx3.h"
+#include <memory.h>
+#include <string>
 
-     int SetBasicProperties();
- };
- #endif
+class GTx8Device : public GTx3Device
+{
+public:
+	GTx8Device();
+	virtual ~GTx8Device();
+
+	int SetBasicProperties();
+};
+#endif

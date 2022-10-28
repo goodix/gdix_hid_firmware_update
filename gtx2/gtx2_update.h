@@ -17,28 +17,26 @@
 #ifndef _GTX2_UPDATE_H
 #define _GTX2_UPDATE_H
 
+#include "../firmware_image.h"
 #include "../gt_update.h"
 #include "../gtmodel.h"
-#include "../firmware_image.h"
 
-#define RAM_BUFFER_SIZE	    4096
-#define BL_STATE_ADDR		0x5095  //X8=5095
-#define FLASH_RESULT_ADDR	0x5096  //x8=0x5096
+#define RAM_BUFFER_SIZE 4096
+#define BL_STATE_ADDR 0x5095	 // X8=5095
+#define FLASH_RESULT_ADDR 0x5096 // x8=0x5096
 
 class GTx2Update : public GTupdate
 {
 public:
-    GTx2Update();
-    virtual int Run(void* para);
-    virtual ~GTx2Update();
-
+	GTx2Update();
+	virtual int Run(void *para);
+	virtual ~GTx2Update();
 
 protected:
-    virtual int load_sub_firmware(unsigned int flash_addr,
-			unsigned char *fw_data, unsigned int len); 
-    virtual int fw_update(unsigned int firmware_flag);
-    virtual int cfg_update();
+	virtual int load_sub_firmware(unsigned int flash_addr,
+								  unsigned char *fw_data, unsigned int len);
+	virtual int fw_update(unsigned int firmware_flag);
+	virtual int cfg_update();
 };
-
 
 #endif

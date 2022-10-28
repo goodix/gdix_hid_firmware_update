@@ -22,7 +22,7 @@
  * limitations under the License.
  */
 
-#ifndef _GT_UTIL_H_ 
+#ifndef _GT_UTIL_H_
 #define _GT_UTIL_H_
 #include <stdio.h>
 #define E_HID_PKG_INDEX 500
@@ -34,33 +34,57 @@
 extern bool pdebug;
 
 #ifdef GDIX_UPDATE_DEBUG
-#define gdix_info(fmt, ...) do{if(pdebug) fprintf(stdout, "[GDIX_INFO][%s:%d]" fmt, __func__, __LINE__, ##__VA_ARGS__);}while(0)
-#define gdix_err(fmt, ...)  do{if(pdebug) fprintf(stderr, "[GDIX_ERROR][%s:%d]" fmt, __func__, __LINE__, ##__VA_ARGS__);}while(0)
+#define gdix_info(fmt, ...)                                                    \
+	do {                                                                       \
+		if (pdebug)                                                            \
+			fprintf(stdout, "[GDIX_INF][%s:%d]" fmt, __func__, __LINE__,       \
+					##__VA_ARGS__);                                            \
+	} while (0)
+#define gdix_err(fmt, ...)                                                     \
+	do {                                                                       \
+		if (pdebug)                                                            \
+			fprintf(stderr, "[GDIX_ERR][%s:%d]" fmt, __func__, __LINE__,       \
+					##__VA_ARGS__);                                            \
+	} while (0)
 #else
-#define gdix_info(fmt, ...) do{}while(0)
-#define gdix_err(fmt, ...) do{}while(0)
+#define gdix_info(fmt, ...)                                                    \
+	do {                                                                       \
+	} while (0)
+#define gdix_err(fmt, ...)                                                     \
+	do {                                                                       \
+	} while (0)
 #endif
 
 #ifdef GDIX_UPDATE_DEBUG
-#define gdix_dbg(fmt, ...)  do{if(pdebug) fprintf(stdout, "[GDIX_DEBUG][%s:%d]" fmt, __func__, __LINE__, ##__VA_ARGS__);}while(0)
+#define gdix_dbg(fmt, ...)                                                     \
+	do {                                                                       \
+		if (pdebug)                                                            \
+			fprintf(stdout, "[GDIX_DBG][%s:%d]" fmt, __func__, __LINE__,       \
+					##__VA_ARGS__);                                            \
+	} while (0)
 #else
-#define gdix_dbg(fmt, ...) do{}while(0)
+#define gdix_dbg(fmt, ...)                                                     \
+	do {                                                                       \
+	} while (0)
 #endif
 
 #ifdef GDIX_DBG_ARRY
-#define gdix_dbg_array(buf, len) do{\
-		int i;\
-		unsigned char *a = buf;\
-		fprintf(stdout,"[GDIX_DEBUG_ARRAY][%s:%d]\n",__func__, __LINE__);\
-		fprintf(stdout,"[GDIX_DEBUG]");\
-		for (i = 0; i < (len); i++) {\
-			fprintf(stdout, "%02x ", (a)[i]);\
-			if ((i + 1) % 16 == 0)\
-				fprintf(stdout,"\n[GDIX_DEBUG]");\
-		}\
-		fprintf(stdout,"\n");\
-	} while(0)
+#define gdix_dbg_array(buf, len)                                               \
+	do {                                                                       \
+		int i;                                                                 \
+		unsigned char *a = buf;                                                \
+		fprintf(stdout, "[GDIX_DEBUG_ARRAY][%s:%d]\n", __func__, __LINE__);    \
+		fprintf(stdout, "[GDIX_DEBUG]");                                       \
+		for (i = 0; i < (len); i++) {                                          \
+			fprintf(stdout, "%02x ", (a)[i]);                                  \
+			if ((i + 1) % 16 == 0)                                             \
+				fprintf(stdout, "\n[GDIX_DEBUG]");                             \
+		}                                                                      \
+		fprintf(stdout, "\n");                                                 \
+	} while (0)
 #else
-#define gdix_dbg_array(fmt, ...) do {} while(0)
+#define gdix_dbg_array(buf, len)                                               \
+	do {                                                                       \
+	} while (0)
 #endif
 #endif

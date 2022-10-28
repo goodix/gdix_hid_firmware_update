@@ -17,8 +17,8 @@
 #ifndef _GTX2_H_
 #define _GTX2_H_
 
-#include <string>
 #include "../gtx5/gtx5.h"
+#include <string>
 
 /*
 #define GTP_PRODUCT_ID_LENGTH		6
@@ -50,14 +50,14 @@
 
 */
 
-#define GTX2_VERSION_ADDR		0x8140
+#define GTX2_VERSION_ADDR 0x8140
 
 class GTx2Device : public GTx5Device
 {
 public:
-    int QueryBasicProperties(){ return 0; };
-    int SetBasicProperties();
-    int GetCfgVersion();
-    virtual ~GTx2Device(){}
+	int QueryBasicProperties() { return 0; };
+	int SetBasicProperties();
+	int GetCfgVersion();
+	virtual ~GTx2Device() {}
 };
 #endif

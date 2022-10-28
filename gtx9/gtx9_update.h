@@ -25,25 +25,23 @@
 #ifndef _GTX9_UPDATE_H
 #define _GTX9_UPDATE_H
 
+#include "../firmware_image.h"
 #include "../gt_update.h"
 #include "../gtmodel.h"
-#include "../firmware_image.h"
 #include "gtx9_firmware_image.h"
-
 
 class GTx9Update : public GTupdate
 {
 public:
-    int Run(void *para);
+	int Run(void *para);
 
 protected:
-    int check_update();
-    int fw_update(unsigned int firmware_flag);
+	int check_update();
+	int fw_update(unsigned int firmware_flag);
 
 private:
-    int prepareUpdate();
-    int flashSubSystem(struct fw_subsys_info *subsys);
+	int prepareUpdate();
+	int flashSubSystem(struct fw_subsys_info *subsys);
 };
-
 
 #endif

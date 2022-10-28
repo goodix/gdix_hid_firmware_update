@@ -19,15 +19,16 @@
 
 #include "../gtx3/gtx3_firmware_image.h"
 
-class GTX8FirmwareImage:public GTX3FirmwareImage{
-
+class GTX8FirmwareImage : public GTX3FirmwareImage
+{
 public:
-    GTX8FirmwareImage();
-    ~GTX8FirmwareImage();
-    virtual int GetFirmwareSubFwNum();
-    virtual int GetFirmwareSubFwDataOffset();
+	GTX8FirmwareImage();
+	~GTX8FirmwareImage();
+	virtual int GetFirmwareSubFwNum();
+	virtual int GetFirmwareSubFwDataOffset();
+
 protected:
-    virtual int InitPid();
+	virtual int InitPid();
 	virtual int InitVid();
 };
 

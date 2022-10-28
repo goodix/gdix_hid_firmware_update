@@ -13,25 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef _GT7868Q_H_
+#define _GT7868Q_H_
 
-#ifndef GTX5_FIRMWARE_IMAGE_H
-#define GTX5_FIRMWARE_IMAGE_H
+#include "../gtx3/gtx3.h"
+#include <memory.h>
+#include <string>
 
-#include "../firmware_image.h"
+#define CMD_ADDR 0x4160
 
-class GTX5FirmwareImage : public FirmwareImage
+class GT7868QDevice : public GTx3Device
 {
 public:
-	GTX5FirmwareImage();
-	~GTX5FirmwareImage();
+	GT7868QDevice();
+	virtual ~GT7868QDevice();
 
-	virtual int GetFirmwareSubFwNum();
-	virtual int GetFirmwareSubFwInfoOffset();
-	virtual int GetFirmwareSubFwDataOffset();
+	int SetBasicProperties();
 
-protected:
-	virtual int InitPid();
-	virtual int InitVid();
+private:
+	unsigned short ChecksumU8_ys(unsigned char *data, int len);
 };
-
 #endif

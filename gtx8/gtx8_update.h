@@ -17,25 +17,25 @@
 #ifndef _GTX8_UPDATE_H
 #define _GTX8_UPDATE_H
 
-#include "../gtx3/gtx3_update.h"
-#include "../gtmodel.h"
 #include "../firmware_image.h"
-
+#include "../gtmodel.h"
+#include "../gtx3/gtx3_update.h"
 
 class GTx8Update : public GTx3Update
 {
 public:
-    GTx8Update();
-    virtual ~GTx8Update();
-    virtual int Run(void* para);
+	GTx8Update();
+	virtual ~GTx8Update();
+	virtual int Run(void *para);
 
 protected:
-    virtual int fw_update(unsigned int firmware_flag);
-    virtual int cfg_update();
-    virtual int flash_cfg_with_isp();
-private:
-    bool is_cfg_flashed_with_isp;
-};
+	virtual int fw_update(unsigned int firmware_flag);
+	virtual int cfg_update();
+	virtual int flash_cfg_with_isp();
 
+private:
+	bool is_cfg_flashed_with_isp;
+	int DisableReport();
+};
 
 #endif

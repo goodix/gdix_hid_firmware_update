@@ -35,10 +35,10 @@
 
 #include "../firmware_image.h"
 
-#define FW_HEADER_SIZE					512
-#define FW_SUBSYS_INFO_SIZE				10
-#define FW_SUBSYS_INFO_OFFSET			42
-#define FW_SUBSYS_MAX_NUM				47
+#define FW_HEADER_SIZE 512
+#define FW_SUBSYS_INFO_SIZE 10
+#define FW_SUBSYS_INFO_OFFSET 42
+#define FW_SUBSYS_MAX_NUM 47
 
 struct fw_subsys_info {
 	unsigned char type;
@@ -53,7 +53,7 @@ struct config_info {
 };
 
 #pragma pack(1)
-struct  firmware_summary {
+struct firmware_summary {
 	unsigned int size;
 	unsigned int checksum;
 	unsigned char hw_pid[6];
@@ -73,26 +73,24 @@ struct  firmware_summary {
 class GTX9FirmwareImage : public FirmwareImage
 {
 public:
-    GTX9FirmwareImage();
+	GTX9FirmwareImage();
 
-    int Initialize(const char * filename);
-    void Close();
-    void *GetFirmwareSummary() {return &m_firmwareSummary;}
-    unsigned char *GetProductID() {return m_firmwarePID;}
-    unsigned char *GetVendorID() {return m_firmwareVID;}
-    unsigned int GetConfigID() {return m_firmwareCfgID;}
-
+	int Initialize(const char *filename);
+	void *GetFirmwareSummary() { return &m_firmwareSummary; }
+	unsigned char *GetProductID() { return m_firmwarePID; }
+	unsigned char *GetVendorID() { return m_firmwareVID; }
+	unsigned int GetConfigID() { return m_firmwareCfgID; }
 
 protected:
-    int GetDataFromFile(const char* filename);
+	int GetDataFromFile(const char *filename);
 
 private:
-    int ParseFirmware();
+	int ParseFirmware();
 
-    unsigned char m_firmwarePID[8];
-    unsigned char m_firmwareVID[4];
-    unsigned int m_firmwareCfgID;
-    struct firmware_summary m_firmwareSummary;
+	unsigned char m_firmwarePID[8];
+	unsigned char m_firmwareVID[4];
+	unsigned int m_firmwareCfgID;
+	struct firmware_summary m_firmwareSummary;
 };
 
 #endif

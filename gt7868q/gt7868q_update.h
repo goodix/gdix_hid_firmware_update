@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Goodix Inc
+ * Copyright (C) 2018 Goodix Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,29 @@
  * limitations under the License.
  */
 
-#ifndef GTX5_FIRMWARE_IMAGE_H
-#define GTX5_FIRMWARE_IMAGE_H
+#ifndef _GT7868Q_UPDATE_H
+#define _GT7868Q_UPDATE_H
 
 #include "../firmware_image.h"
+#include "../gtmodel.h"
+#include "../gtx3/gtx3_update.h"
 
-class GTX5FirmwareImage : public FirmwareImage
+class GT7868QUpdate : public GTx3Update
 {
 public:
-	GTX5FirmwareImage();
-	~GTX5FirmwareImage();
-
-	virtual int GetFirmwareSubFwNum();
-	virtual int GetFirmwareSubFwInfoOffset();
-	virtual int GetFirmwareSubFwDataOffset();
+	GT7868QUpdate();
+	virtual ~GT7868QUpdate();
+	virtual int Run(void *para);
 
 protected:
-	virtual int InitPid();
-	virtual int InitVid();
+	virtual int fw_update(unsigned int firmware_flag);
+	virtual int cfg_update();
+	virtual int flash_cfg_with_isp();
+
+private:
+	bool is_cfg_flashed_with_isp;
+	void cmd_init(unsigned char *cmd_buf, unsigned char cmd,
+				  unsigned short cmd_data);
 };
 
 #endif

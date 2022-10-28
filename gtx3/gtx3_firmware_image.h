@@ -19,15 +19,16 @@
 
 #include "../gtx2/gtx2_firmware_image.h"
 
-class GTX3FirmwareImage:public GTX2FirmwareImage{
-
+class GTX3FirmwareImage : public GTX2FirmwareImage
+{
 public:
-    GTX3FirmwareImage();
-    ~GTX3FirmwareImage();
-    virtual int GetFirmwareSubFwNum();
-    virtual int GetFirmwareSubFwDataOffset();
+	GTX3FirmwareImage();
+	~GTX3FirmwareImage();
+	virtual int GetFirmwareSubFwNum();
+	virtual int GetFirmwareSubFwDataOffset();
+
 protected:
-    virtual int InitPid();
+	virtual int InitPid();
 	virtual int InitVid();
 };
 

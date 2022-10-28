@@ -22,35 +22,55 @@
 class GTmodel
 {
 public:
-    GTmodel(){};
-    virtual ~GTmodel(){};
+	GTmodel(){};
+	virtual ~GTmodel(){};
 
-    virtual int Open(const char *filename){return 0;}
-    virtual bool IsOpened(){return m_deviceOpen;}
-    virtual int Read(unsigned int addr, unsigned char *buf, unsigned int len) {return 0;}
-    virtual int GetReport(unsigned char reportId, unsigned char *buf) {return 0;}
+	virtual int Open(const char *filename) { return 0; }
+	virtual bool IsOpened() { return m_deviceOpen; }
+	virtual int Read(unsigned int addr, unsigned char *buf, unsigned int len)
+	{
+		return 0;
+	}
+	virtual int GetReport(unsigned char reportId, unsigned char *buf)
+	{
+		return 0;
+	}
 
-    virtual int Write(unsigned int addr, const unsigned char *buf, unsigned int len) {return 0;}
-    virtual int Write(const unsigned char *buf, unsigned int len) {return 0;}
-    virtual int WriteSpeCmd(const unsigned char *buf, unsigned int len) {return 0;}
-    virtual int SendCmd(unsigned char cmd, unsigned char *data, int dataLen) {return 0;}
-    virtual int SendConfig(unsigned char *config, int len) {return 0;}
+	virtual int Write(unsigned int addr, const unsigned char *buf,
+					  unsigned int len)
+	{
+		return 0;
+	}
+	virtual int Write(const unsigned char *buf, unsigned int len) { return 0; }
+	virtual int WriteSpeCmd(const unsigned char *buf, unsigned int len)
+	{
+		return 0;
+	}
+	virtual int SendCmd(unsigned char cmd, unsigned char *data, int dataLen)
+	{
+		return 0;
+	}
+	virtual int SendConfig(unsigned char *config, int len) { return 0; }
 
-    virtual int GetFirmwareProps(const char *deviceName, char *props_buf, int len) {return 0;}
-    virtual int GetFirmwareVersionMajor() { return 0; }
-    virtual int GetFirmwareVersionMinor() { return 0; }
-    virtual unsigned char *GetProductID() { return 0; }
-    virtual unsigned char *GetVendorID() {return 0;}
-    virtual unsigned char GetSensorID() {return -1;}
-    virtual int GetCfgVersion() {return 0;}
-    virtual unsigned int GetConfigID() {return 0;}
-    virtual int QueryBasicProperties() {return 0;}
-    virtual int SetBasicProperties() {return 0;}
-    virtual void Close() {return;}
-    virtual int GetFd() { return 0; }
-    
+	virtual int GetFirmwareProps(const char *deviceName, char *props_buf,
+								 int len)
+	{
+		return 0;
+	}
+	virtual int GetFirmwareVersionMajor() { return 0; }
+	virtual int GetFirmwareVersionMinor() { return 0; }
+	virtual unsigned char *GetProductID() { return 0; }
+	virtual unsigned char *GetVendorID() { return 0; }
+	virtual unsigned char GetSensorID() { return -1; }
+	virtual int GetCfgVersion() { return 0; }
+	virtual unsigned int GetConfigID() { return 0; }
+	virtual int QueryBasicProperties() { return 0; }
+	virtual int SetBasicProperties() { return 0; }
+	virtual void Close() { return; }
+	virtual int GetFd() { return 0; }
+
 protected:
-    bool m_deviceOpen;
+	bool m_deviceOpen;
 };
 
 #endif

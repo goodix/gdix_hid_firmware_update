@@ -17,26 +17,24 @@
 #ifndef _GTX5_UPDATE_H
 #define _GTX5_UPDATE_H
 
+#include "../firmware_image.h"
 #include "../gt_update.h"
 #include "../gtmodel.h"
-#include "../firmware_image.h"
 
-#define RAM_BUFFER_SIZE	    4096
-#define BL_STATE_ADDR		0x5095  //X8=5095
+#define RAM_BUFFER_SIZE 4096
+#define BL_STATE_ADDR 0x5095 // X8=5095
 //#define FLASH_BUFFER_ADDR	0xc000  //X8=0XDE24
-#define FLASH_RESULT_ADDR	0x5096  //x8=0x5096
+#define FLASH_RESULT_ADDR 0x5096 // x8=0x5096
 
 class GTx5Update : public GTupdate
 {
 public:
-    virtual int Run(void* para);
+	virtual int Run(void *para);
 
 protected:
-    virtual int load_sub_firmware(unsigned int flash_addr,
-			unsigned char *fw_data, unsigned int len); 
-    virtual int fw_update(unsigned int firmware_flag);
-
+	virtual int load_sub_firmware(unsigned int flash_addr,
+								  unsigned char *fw_data, unsigned int len);
+	virtual int fw_update(unsigned int firmware_flag);
 };
-
 
 #endif

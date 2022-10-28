@@ -21,14 +21,14 @@
 #define SUB_FW_INFO_OFFSET 32
 #define SUB_FW_DATA_OFFSET 128 //x8=256
 
-#define FW_IMAGE_PID_OFFSET 15 
+#define FW_IMAGE_PID_OFFSET 15
 #define FW_IMAGE_VID_OFFSET 21 //x8=23
 
 #define FW_IMAGE_SUB_FWNUM_OFFSET 24 //x8=26
 */
 #include <cstddef>
 
-//update type
+// update type
 enum updateFlag {
 	NO_NEED_UPDATE = 0,
 	NEED_UPDATE_FW = 1,
@@ -42,7 +42,7 @@ class FirmwareImage
 public:
 	FirmwareImage();
 
-	virtual int Initialize(const char * filename);
+	virtual int Initialize(const char *filename);
 
 	virtual unsigned int GetFirmwareSize() { return m_firmwareSize; }
 	virtual unsigned char *GetProductID() { return m_pid; }
@@ -50,7 +50,8 @@ public:
 	virtual unsigned int GetConfigID() { return 0; }
 	virtual int GetFirmwareVersionMajor() { return m_firmwareVersionMajor; }
 	virtual int GetFirmwareVersionMinor() { return m_firmwareVersionMinor; }
-	virtual unsigned char *GetFirmwareData() {
+	virtual unsigned char *GetFirmwareData()
+	{
 		if (m_initialized)
 			return m_firmwareData;
 		else
@@ -58,19 +59,20 @@ public:
 	}
 	virtual void Close();
 	virtual ~FirmwareImage() { Close(); }
-	virtual int GetFirmwareSubFwNum(){return 0;}
-	virtual int GetFirmwareSubFwInfoOffset(){return 0;}
-	virtual int GetFirmwareSubFwDataOffset(){return 0;}
-	virtual void *GetFirmwareSummary() {return NULL;}
+	virtual int GetFirmwareSubFwNum() { return 0; }
+	virtual int GetFirmwareSubFwInfoOffset() { return 0; }
+	virtual int GetFirmwareSubFwDataOffset() { return 0; }
+	virtual void *GetFirmwareSummary() { return NULL; }
 	virtual int GetConfigSubCfgNum();
 	virtual int GetConfigSubCfgInfoOffset();
 	virtual int GetConfigSubCfgDataOffset();
-	virtual bool IsOpened(){return m_initialized;}
-	virtual bool HasConfig(){return hasConfig;}
-	virtual int GetConfigSize() {return m_configSize;}
+	virtual bool IsOpened() { return m_initialized; }
+	virtual bool HasConfig() { return hasConfig; }
+	virtual int GetConfigSize() { return m_configSize; }
 	virtual updateFlag GetUpdateFlag();
+
 protected:
-	virtual int GetDataFromFile(const char* filename);
+	virtual int GetDataFromFile(const char *filename);
 	virtual int InitPid();
 	virtual int InitVid();
 
@@ -81,12 +83,9 @@ protected:
 	int m_configSize;
 	bool hasConfig;
 	unsigned char m_pid[8];
-	int m_firmwareVersionMajor; 
-	int m_firmwareVersionMinor; 
+	int m_firmwareVersionMajor;
+	int m_firmwareVersionMinor;
 	unsigned char *m_firmwareData;
 };
 
-
 #endif
-
-

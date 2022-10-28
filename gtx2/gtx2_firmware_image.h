@@ -14,24 +14,23 @@
  * limitations under the License.
  */
 
-
 #ifndef GTX2_FIRMWARE_IMAGE_h
 #define GTX2_FIRMWARE_IMAGE_h
 
 #include "../firmware_image.h"
 
-class GTX2FirmwareImage:public FirmwareImage{
-
+class GTX2FirmwareImage : public FirmwareImage
+{
 public:
-    GTX2FirmwareImage();
-    virtual ~GTX2FirmwareImage();
+	GTX2FirmwareImage();
+	virtual ~GTX2FirmwareImage();
 
-    virtual int GetFirmwareSubFwNum();
+	virtual int GetFirmwareSubFwNum();
 	virtual int GetFirmwareSubFwInfoOffset();
 	virtual int GetFirmwareSubFwDataOffset();
 
 protected:
-    virtual int InitPid();
+	virtual int InitPid();
 	virtual int InitVid();
 };
 

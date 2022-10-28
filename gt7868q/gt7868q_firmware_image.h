@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-#ifndef GTX5_FIRMWARE_IMAGE_H
-#define GTX5_FIRMWARE_IMAGE_H
+#ifndef GT7868Q_FIRMWARE_IMAGE_H
+#define GT7868Q_FIRMWARE_IMAGE_H
 
-#include "../firmware_image.h"
+#include "../gtx3/gtx3_firmware_image.h"
 
-class GTX5FirmwareImage : public FirmwareImage
+class GT7868QFirmwareImage : public GTX3FirmwareImage
 {
 public:
-	GTX5FirmwareImage();
-	~GTX5FirmwareImage();
-
+	GT7868QFirmwareImage();
+	~GT7868QFirmwareImage();
 	virtual int GetFirmwareSubFwNum();
-	virtual int GetFirmwareSubFwInfoOffset();
 	virtual int GetFirmwareSubFwDataOffset();
 
 protected:
