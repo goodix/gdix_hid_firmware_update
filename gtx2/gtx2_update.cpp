@@ -74,6 +74,25 @@ int GTx2Update::Run(void *para)
 		}
 	}
 
+	if (flag & NEED_UPDATE_CONFIG) {
+		retry = 0;
+		do {
+			ret = cfg_update();
+			if (ret) {
+				gdix_dbg("Update cfg failed\n");
+				usleep(200000);
+			} else {
+				usleep(300000);
+				gdix_dbg("Update cfg success\n");
+				break;
+			}
+		} while (retry++ < 3);
+		if (ret) {
+			gdix_err("config update err:ret=%d\n", ret);
+			return ret;
+		}
+	}
+
 	if (flag & NEED_UPDATE_FW) {
 		retry = 0;
 		do {
@@ -96,24 +115,24 @@ int GTx2Update::Run(void *para)
 	// before go forward,Set Basic Properties to refresh SensorID
 	// dev->SetBasicProperties();
 
-	if (flag & NEED_UPDATE_CONFIG) {
-		retry = 0;
-		do {
-			ret = cfg_update();
-			if (ret) {
-				gdix_dbg("Update cfg failed\n");
-				usleep(200000);
-			} else {
-				usleep(300000);
-				gdix_dbg("Update cfg success\n");
-				break;
-			}
-		} while (retry++ < 3);
-		if (ret) {
-			gdix_err("config update err:ret=%d\n", ret);
-			return ret;
-		}
-	}
+	// if (flag & NEED_UPDATE_CONFIG) {
+	// 	retry = 0;
+	// 	do {
+	// 		ret = cfg_update();
+	// 		if (ret) {
+	// 			gdix_dbg("Update cfg failed\n");
+	// 			usleep(200000);
+	// 		} else {
+	// 			usleep(300000);
+	// 			gdix_dbg("Update cfg success\n");
+	// 			break;
+	// 		}
+	// 	} while (retry++ < 3);
+	// 	if (ret) {
+	// 		gdix_err("config update err:ret=%d\n", ret);
+	// 		return ret;
+	// 	}
+	// }
 	return 0;
 }
 

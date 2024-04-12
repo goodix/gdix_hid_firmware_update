@@ -54,21 +54,23 @@
 #include "gtx9/gtx9.h"
 #include "gtx9/gtx9_firmware_image.h"
 #include "gtx9/gtx9_update.h"
-
-#define RAM_BUFFER_SIZE 4096
+#include "berlin_a/brla.h"
+#include "berlin_a/brla_firmware_image.h"
+#include "berlin_a/brla_update.h"
 
 #define GTPUPDATE_GETOPTS "hfd:pvt:s:ima:"
 
-#define VERSION_MAJOR 1
-#define VERSION_MINOR 7
-#define VERSION_SUBMINOR 8
+#define VERSION "1.7.9"
 
-#define TYPE_PHOENIX 0
-#define TYPE_NANJING 1
-#define TYPE_MOUSEPAD 2
-#define TYPE_NORMANDYL 3
-#define TYPE_BERLINB 4
-#define TYPE_YELLOWSTONE 5
+enum IC_TYPE {
+	TYPE_PHOENIX,
+	TYPE_NANJING,
+	TYPE_MOUSEPAD,
+	TYPE_NORMANDYL,
+	TYPE_YELLOWSTONE,
+	TYPE_BERLINA,
+	TYPE_BERLINB,
+};
 
 bool pdebug = false;
 
@@ -101,8 +103,7 @@ static void printHelp(const char *prog_name)
 
 static void printVersion()
 {
-	fprintf(stdout, "goodixupdate version %d.%d.%d\n", VERSION_MAJOR,
-			VERSION_MINOR, VERSION_SUBMINOR);
+	fprintf(stdout, "goodixupdate version %s\n", VERSION);
 }
 
 static void lowercase_str(unsigned char *str)
@@ -133,6 +134,7 @@ int main(int argc, char **argv)
 	regex_t reg_x8xx;
 	regex_t reg_x9xx;
 	regex_t reg_7868;
+	regex_t reg_brla;
 	regmatch_t pamtch[1]; // match container
 
 	char *deviceName = NULL;
@@ -276,10 +278,10 @@ int main(int argc, char **argv)
 		}
 		regfree(&reg_pid);
 
-		/* 0EA5~0EAA is BerlinB */
-		regcomp(&reg_pid, "^0[eE][aA][5-9aA]$", REG_EXTENDED);
+		/* 0EA5~0EAF is BerlinB */
+		regcomp(&reg_pid, "^0[eE][aA][5-9A-Fa-f]$", REG_EXTENDED);
 		if (REG_NOERROR == regexec(&reg_pid, pid, 1, pamtch, 0)) {
-			gdix_dbg("pid match BerlinB pid 0EA5~0EAA\n");
+			gdix_dbg("pid match BerlinB pid 0EA5~0EAF\n");
 			chipType = TYPE_BERLINB;
 		}
 		regfree(&reg_pid);
@@ -291,6 +293,14 @@ int main(int argc, char **argv)
 			chipType = TYPE_BERLINB;
 		}
 		regfree(&reg_pid);
+
+		/* 0F60~0F7F is BerlinA */
+		regcomp(&reg_pid, "^0[fF][6-7][0-9A-Fa-f]$", REG_EXTENDED);
+		if (REG_NOERROR == regexec(&reg_pid, pid, 1, pamtch, 0)) {
+			gdix_dbg("pid match BerlinA pid 0F60~0F7F\n");
+			chipType = TYPE_BERLINA;
+		}
+		regfree(&reg_pid);		
 	} else if (productionTypeName != NULL) {
 		regcomp(&reg_x3xx, "^[0-9]3[0-9]{2}", REG_EXTENDED);
 		regcomp(&reg_x5xx, "^[0-9]5[0-9]{2}", REG_EXTENDED);
@@ -298,6 +308,7 @@ int main(int argc, char **argv)
 		regcomp(&reg_x8xx, "^[0-9]8[0-9]{2}", REG_EXTENDED);
 		regcomp(&reg_x9xx, "^[0-9]9[0-9]{2}", REG_EXTENDED);
 		regcomp(&reg_7868, "^7868", REG_EXTENDED);
+		regcomp(&reg_brla, "^7726", REG_EXTENDED);
 
 		if (REG_NOERROR == regexec(&reg_x3xx, productionTypeName, 1, pamtch, 0))
 			chipType = TYPE_PHOENIX; // 7388 match
@@ -316,6 +327,9 @@ int main(int argc, char **argv)
 		else if (REG_NOERROR ==
 				 regexec(&reg_7868, productionTypeName, 1, pamtch, 0))
 			chipType = TYPE_YELLOWSTONE; // 7868 match
+		else if (REG_NOERROR ==
+				 regexec(&reg_brla, productionTypeName, 1, pamtch, 0))
+			chipType = TYPE_BERLINA; // 7726 match
 		else
 			chipType = -1; // no match
 
@@ -325,6 +339,7 @@ int main(int argc, char **argv)
 		regfree(&reg_x8xx);
 		regfree(&reg_x9xx);
 		regfree(&reg_7868);
+		regfree(&reg_brla);
 	}
 
 	if (chipType < 0) {
@@ -369,6 +384,10 @@ int main(int argc, char **argv)
 		fw_image = new GT7868QFirmwareImage;
 		gt_update = new GT7868QUpdate;
 		firmware_flag = 0x0C; // update type:0x02,0x03;
+	} else if (chipType == TYPE_BERLINA) {
+		gt_model = new BrlADevice;
+		fw_image = new BrlAFirmwareImage;
+		gt_update = new BrlAUpdate;
 	} else {
 		if (pid != NULL)
 			gdix_err("unsupported pid number:%s\n", pid);

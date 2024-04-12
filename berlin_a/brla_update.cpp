@@ -32,10 +32,12 @@
 #include <unistd.h>
 
 #include "../gtp_util.h"
-#include "gtx9.h"
-#include "gtx9_update.h"
+#include "brla.h"
+#include "brla_update.h"
 
-int GTx9Update::Run(void *para)
+#define ISP_RAM_ADDR 0x29400
+
+int BrlAUpdate::Run(void *para)
 {
 	int ret;
 
@@ -77,7 +79,7 @@ int GTx9Update::Run(void *para)
 	return 0;
 }
 
-int GTx9Update::check_update()
+int BrlAUpdate::check_update()
 {
 	int ret;
 
@@ -101,7 +103,7 @@ int GTx9Update::check_update()
 	return 0;
 }
 
-int GTx9Update::prepareUpdate()
+int BrlAUpdate::prepareUpdate()
 {
 	uint8_t tempBuf[5] = {0};
 	uint8_t recvBuf[5] = {0};
@@ -119,7 +121,7 @@ int GTx9Update::prepareUpdate()
 	}
 	while (retry--) {
 		usleep(200000);
-		ret = dev->Read(0x10010, tempBuf, 1);
+		ret = dev->Read(0x5095, tempBuf, 1);
 		if (ret == 1 && tempBuf[0] == 0xDD)
 			break;
 	}
@@ -132,7 +134,10 @@ int GTx9Update::prepareUpdate()
 
 	/* step 2. erase flash */
 	tempBuf[0] = 0x01;
-	ret = dev->SendCmd(0x11, tempBuf, 1);
+	for (int i = 0; i < 3; i++) {
+		ret = dev->SendCmd(0x11, tempBuf, 1);
+		usleep(2000);
+	}
 	if (ret < 0) {
 		gdix_err("Failed send erase flash cmd\n");
 		return ret;
@@ -142,12 +147,12 @@ int GTx9Update::prepareUpdate()
 	memset(tempBuf, 0x55, 5);
 	while (retry--) {
 		usleep(10000);
-		ret = dev->Write(0x14000, tempBuf, 5);
+		ret = dev->Write(ISP_RAM_ADDR, tempBuf, 5);
 		if (ret < 0) {
 			gdix_err("Failed write sram, ret=%d\n", ret);
 			return ret;
 		}
-		ret = dev->Read(0x14000, recvBuf, 5);
+		ret = dev->Read(ISP_RAM_ADDR, recvBuf, 5);
 		if (!memcmp(tempBuf, recvBuf, 5))
 			break;
 	}
@@ -161,7 +166,7 @@ int GTx9Update::prepareUpdate()
 	return 0;
 }
 
-int GTx9Update::flashSubSystem(struct fw_subsys_info *subsys)
+int BrlAUpdate::flashSubSystem(struct fw_subsys_info_a *subsys)
 {
 	uint32_t data_size = 0;
 	uint32_t offset = 0;
@@ -170,16 +175,15 @@ int GTx9Update::flashSubSystem(struct fw_subsys_info *subsys)
 	uint32_t checksum;
 	uint8_t cmdBuf[10] = {0};
 	uint8_t flag;
-	int resend_rty = 3;
 	int retry;
 	uint32_t i;
 	int ret;
 
 	while (total_size > 0) {
 		data_size = total_size > 4096 ? 4096 : total_size;
-resend:
+
 		/* send fw data to dram */
-		ret = dev->Write(0x14000, &subsys->data[offset], data_size);
+		ret = dev->Write(ISP_RAM_ADDR, &subsys->data[offset], data_size);
 		if (ret < 0) {
 			gdix_err("Write fw data failed\n");
 			return ret;
@@ -211,15 +215,9 @@ resend:
 		retry = 10;
 		while (retry--) {
 			usleep(20000);
-			ret = dev->Read(0x10011, &flag, 1);
+			ret = dev->Read(0x5096, &flag, 1);
 			if (ret == 1 && flag == 0xAA)
 				break;
-			else if (ret == 1 && flag == 0xBB) { //checksum error
-				if (resend_rty-- > 0) {
-					gdix_err("Flash data checksum error, retry:%d\n", 3 - resend_rty);
-					goto resend;
-				}
-			}
 		}
 		if (retry < 0) {
 			gdix_err("Failed get valid ack, ret=%d flag=0x%02x\n", ret, flag);
@@ -227,7 +225,7 @@ resend:
 		}
 
 		gdix_info("Flash package ok, addr:0x%06x\n", temp_addr);
-		resend_rty = 3;
+
 		offset += data_size;
 		temp_addr += data_size;
 		total_size -= data_size;
@@ -237,12 +235,12 @@ resend:
 }
 
 #define CFG_MAX_SIZE 4096
-int GTx9Update::fw_update(unsigned int firmware_flag)
+int BrlAUpdate::fw_update(unsigned int firmware_flag)
 {
-	struct firmware_summary *fw_info =
-		(struct firmware_summary *)image->GetFirmwareSummary();
-	struct fw_subsys_info *fw_x;
-	struct fw_subsys_info subsys_cfg;
+	struct firmware_summary_a *fw_info =
+		(struct firmware_summary_a *)image->GetFirmwareSummary();
+	struct fw_subsys_info_a *fw_x;
+	struct fw_subsys_info_a subsys_cfg;
 	int i;
 	int ret;
 	uint8_t buf[1];
@@ -260,7 +258,7 @@ int GTx9Update::fw_update(unsigned int firmware_flag)
 
 		subsys_cfg.data = temp_buf;
 		subsys_cfg.size = CFG_MAX_SIZE;
-		subsys_cfg.flash_addr = 0x40000;
+		subsys_cfg.flash_addr = 0x3E000;
 		subsys_cfg.type = 4;
 		ret = flashSubSystem(&subsys_cfg);
 		if (ret < 0) {

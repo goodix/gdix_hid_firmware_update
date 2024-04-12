@@ -1,12 +1,15 @@
-### Introduction
+# Introduction
+
 This project is used to update firmware for Goodix gtx5 serials touch
 controller via HIDRAW node. This source has been compiled and tested under
 Linux systems with libc.
 
-### Compile
-$ make
+## Compile
 
-### How to do a Firmware update
+`$ make`
+
+## How to do a Firmware update
+
 Boot up your target device and login in.
 In the browser,press Ctrl+Alt+T to open a terminal,type 'shell' enter the shell.
 
@@ -29,4 +32,3 @@ Go back to /usr/local/,type the follow cmd,
 `<firmware>` is the bin file that provided by goodix.
 
 The output log will tell you whether the update is success.
-
