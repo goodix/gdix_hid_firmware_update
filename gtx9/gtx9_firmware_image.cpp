@@ -108,6 +108,14 @@ err_out:
 	return ret;
 }
 
+updateFlag GTX9FirmwareImage::GetUpdateFlag()
+{
+	if (hasConfig) {
+		return (updateFlag)(m_firmwareData[m_firmwareSize + 2]);
+	}
+	return NO_NEED_UPDATE;
+}
+
 int GTX9FirmwareImage::ParseFirmware()
 {
 	struct firmware_summary *fw_summary = &m_firmwareSummary;

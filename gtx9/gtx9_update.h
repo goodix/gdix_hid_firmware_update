@@ -34,14 +34,13 @@ class GTx9Update : public GTupdate
 {
 public:
 	int Run(void *para);
-
-protected:
 	int check_update();
-	int fw_update(unsigned int firmware_flag);
-
+protected:
+	virtual int prepareUpdate();
+	virtual int flashSubSystem(struct fw_subsys_info *subsys);
+	virtual int fw_update(unsigned int firmware_flag);
 private:
-	int prepareUpdate();
-	int flashSubSystem(struct fw_subsys_info *subsys);
+	int mUpdateFlag;
 };
 
 #endif

@@ -46,6 +46,12 @@ int GTx9Update::Run(void *para)
 	// get all parameter
 	pGTUpdatePara parameter = (pGTUpdatePara)para;
 
+	if (image->HasConfig())
+		this->mUpdateFlag = image->GetUpdateFlag();
+	else
+		this->mUpdateFlag = NEED_UPDATE_FW;
+	gdix_info("update flag:0x%02X\n", (uint8_t)this->mUpdateFlag);
+
 	if (!parameter->force) {
 		ret = check_update();
 		if (ret < 0) {
@@ -60,19 +66,23 @@ int GTx9Update::Run(void *para)
 		gdix_info("Force to upgrade\n");
 	}
 
-	ret = prepareUpdate();
-	if (ret < 0) {
-		gdix_err("Failed prepare update\n");
-		return ret;
-	}
+	if ((this->mUpdateFlag & NEED_UPDATE_FW) ||
+			(this->mUpdateFlag & NEED_UPDATE_CONFIG_WITH_ISP)) {
+		ret = prepareUpdate();
+		if (ret < 0) {
+			gdix_err("Failed prepare update\n");
+			return ret;
+		}
 
-	ret = fw_update(parameter->firmwareFlag);
-	if (ret < 0) {
-		gdix_err("Failed update\n");
-		return ret;
+		ret = fw_update(parameter->firmwareFlag);
+		if (ret < 0) {
+			gdix_err("Failed update\n");
+			return ret;
+		}
+		gdix_info("Success update\n");
+	} else {
+		gdix_info("skip update\n");
 	}
-
-	gdix_info("Success update\n");
 
 	return 0;
 }
@@ -170,64 +180,74 @@ int GTx9Update::flashSubSystem(struct fw_subsys_info *subsys)
 	uint32_t checksum;
 	uint8_t cmdBuf[10] = {0};
 	uint8_t flag;
-	int resend_rty = 3;
+	int resend_rty;
 	int retry;
 	uint32_t i;
 	int ret;
 
 	while (total_size > 0) {
 		data_size = total_size > 4096 ? 4096 : total_size;
-resend:
-		/* send fw data to dram */
-		ret = dev->Write(0x14000, &subsys->data[offset], data_size);
-		if (ret < 0) {
-			gdix_err("Write fw data failed\n");
-			return ret;
-		}
-
-		/* send checksum */
-		for (i = 0, checksum = 0; i < data_size; i += 2) {
-			checksum +=
-				subsys->data[offset + i] + (subsys->data[offset + i + 1] << 8);
-		}
-
-		cmdBuf[0] = (data_size >> 8) & 0xFF;
-		cmdBuf[1] = data_size & 0xFF;
-		cmdBuf[2] = (temp_addr >> 24) & 0xFF;
-		cmdBuf[3] = (temp_addr >> 16) & 0xFF;
-		cmdBuf[4] = (temp_addr >> 8) & 0xFF;
-		cmdBuf[5] = temp_addr & 0xFF;
-		cmdBuf[6] = (checksum >> 24) & 0xFF;
-		cmdBuf[7] = (checksum >> 16) & 0xFF;
-		cmdBuf[8] = (checksum >> 8) & 0xFF;
-		cmdBuf[9] = checksum & 0xFF;
-		ret = dev->SendCmd(0x12, cmdBuf, 10);
-		if (ret < 0) {
-			gdix_err("Failed send start update cmd\n");
-			return ret;
-		}
-
-		/* wait update finish */
-		retry = 10;
-		while (retry--) {
-			usleep(20000);
-			ret = dev->Read(0x10011, &flag, 1);
-			if (ret == 1 && flag == 0xAA)
-				break;
-			else if (ret == 1 && flag == 0xBB) { //checksum error
-				if (resend_rty-- > 0) {
-					gdix_err("Flash data checksum error, retry:%d\n", 3 - resend_rty);
-					goto resend;
-				}
+		resend_rty = 3;
+		while (resend_rty--) {
+			/* send fw data to dram */
+			ret = dev->Write(0x14000, &subsys->data[offset], data_size);
+			if (ret < 0) {
+				gdix_err("Write fw data failed\n");
+				return ret;
 			}
+
+			usleep(20000);
+
+			/* send checksum */
+			for (i = 0, checksum = 0; i < data_size; i += 2) {
+				checksum +=
+					subsys->data[offset + i] + (subsys->data[offset + i + 1] << 8);
+			}
+
+			cmdBuf[0] = (data_size >> 8) & 0xFF;
+			cmdBuf[1] = data_size & 0xFF;
+			cmdBuf[2] = (temp_addr >> 24) & 0xFF;
+			cmdBuf[3] = (temp_addr >> 16) & 0xFF;
+			cmdBuf[4] = (temp_addr >> 8) & 0xFF;
+			cmdBuf[5] = temp_addr & 0xFF;
+			cmdBuf[6] = (checksum >> 24) & 0xFF;
+			cmdBuf[7] = (checksum >> 16) & 0xFF;
+			cmdBuf[8] = (checksum >> 8) & 0xFF;
+			cmdBuf[9] = checksum & 0xFF;
+			ret = dev->SendCmd(0x12, cmdBuf, 10);
+			if (ret < 0) {
+				gdix_err("Failed send start update cmd\n");
+				return ret;
+			}
+
+			/* wait update finish */
+			retry = 10;
+			while (retry--) {
+				usleep(100000);
+				ret = dev->Read(0x10011, &flag, 1);
+				if (ret == 1 && flag == 0xAA) {
+					break;
+				} else if (ret == 1 && flag == 0xBB) { //checksum error
+                    gdix_err("checksum error of the data received by host\n");
+                    retry = -1;
+                    break;
+				} else if (ret == 1 && flag == 0xCC) {
+                    gdix_err("checksum error of the data read back from flash\n");
+                    retry = -1;
+                    break;
+                }
+			}
+			if (retry >= 0)
+				break;
+            gdix_err("Failed get valid ack, addr:0x%04x ret=%d flag=0x%02x rty:%d\n",
+                    temp_addr, ret, flag, 3 - resend_rty);
 		}
-		if (retry < 0) {
-			gdix_err("Failed get valid ack, ret=%d flag=0x%02x\n", ret, flag);
-			return -EINVAL;
-		}
+        if (resend_rty < 0) {
+            gdix_err("Flash package failed, exit\n");
+            return -EINVAL;
+        }		
 
 		gdix_info("Flash package ok, addr:0x%06x\n", temp_addr);
-		resend_rty = 3;
 		offset += data_size;
 		temp_addr += data_size;
 		total_size -= data_size;
@@ -243,20 +263,35 @@ int GTx9Update::fw_update(unsigned int firmware_flag)
 		(struct firmware_summary *)image->GetFirmwareSummary();
 	struct fw_subsys_info *fw_x;
 	struct fw_subsys_info subsys_cfg;
+	struct fw_subsys_info subsys_pmt;
 	int i;
 	int ret;
 	uint8_t buf[1];
 	int minorVer;
 	int majorVer;
 	uint8_t cfgVer;
-	uint8_t temp_buf[CFG_MAX_SIZE] = {0};
+	uint8_t temp_buf[CFG_MAX_SIZE];
 
 	gdix_info("IN\n");
+
+	memset(temp_buf, 0xFF, sizeof(temp_buf));
+
+	/* erase pmt0 firstly */
+	subsys_pmt.data = temp_buf;
+	subsys_pmt.size = 4096;
+	subsys_pmt.flash_addr = 0x1000;
+	subsys_pmt.type = fw_info->subsys[fw_info->subsys_num - 2].type;
+	ret = flashSubSystem(&subsys_pmt);
+	if (ret < 0) {
+		gdix_err("failed erase pmt0\n");
+		return ret;
+	}
+
 	/* flash config */
 	if (image->HasConfig()) {
 		memcpy(temp_buf,
-			   image->GetFirmwareData() + image->GetFirmwareSize() + 64,
-			   image->GetConfigSize());
+			image->GetFirmwareData() + image->GetFirmwareSize() + 64,
+			image->GetConfigSize());
 
 		subsys_cfg.data = temp_buf;
 		subsys_cfg.size = CFG_MAX_SIZE;
@@ -271,18 +306,26 @@ int GTx9Update::fw_update(unsigned int firmware_flag)
 		usleep(20000);
 	}
 
-	for (i = 1; i < fw_info->subsys_num; i++) {
-		fw_x = &fw_info->subsys[i];
-		if (fw_x->type == (uint8_t)firmware_flag) {
-			gdix_info("skip type[%02X] subsystem[%d]\n", fw_x->type, i);
-			continue;
+	if (this->mUpdateFlag & NEED_UPDATE_FW) {
+		/* flash firmware */
+		for (i = 1; i < fw_info->subsys_num; i++) {
+			fw_x = &fw_info->subsys[i];
+			if ((fw_x->type == (uint8_t)firmware_flag) &&
+					!(this->mUpdateFlag & NEED_UPDATE_HID_SUBSYSTEM)) {
+				gdix_info("skip type[%02X] subsystem[%d]\n", fw_x->type, i);
+				continue;
+			}
+			if (fw_x->flash_addr == 0) {
+				gdix_info("skip bootcode with flash_addr=0, type[%02X] subsystem[%d]\n", fw_x->type, i);
+				continue;
+			}
+			ret = flashSubSystem(fw_x);
+			if (ret < 0) {
+				gdix_err("-------- Failed flash subsystem %d --------\n", i);
+				return ret;
+			}
+			gdix_info("-------- Success flash subsystem %d --------\n", i);
 		}
-		ret = flashSubSystem(fw_x);
-		if (ret < 0) {
-			gdix_err("-------- Failed flash subsystem %d --------\n", i);
-			return ret;
-		}
-		gdix_info("-------- Success flash subsystem %d --------\n", i);
 	}
 
 	/* reset IC */
@@ -293,7 +336,7 @@ int GTx9Update::fw_update(unsigned int firmware_flag)
 		gdix_err("Failed reset IC\n");
 		return ret;
 	}
-	usleep(100000);
+	usleep(200000);
 
 	/* compare version */
 	dev->SetBasicProperties();

@@ -44,12 +44,19 @@ public:
 	bool IsOpened();
 	void Close();
 
+	unsigned char m_pid[8];
+	unsigned char m_vid[4];
+	unsigned char m_sensorID;
+	unsigned int m_configID;
+	int m_firmwareVersionMajor;
+	int m_firmwareVersionMinor;
+
 	int Read(unsigned int addr, unsigned char *buf, unsigned int len);
 	int Write(unsigned int addr, const unsigned char *buf, unsigned int len);
 	int WriteSpeCmd(const unsigned char *buf, unsigned int len);
 	int SendCmd(unsigned char cmd, unsigned char *data, int dataLen);
 	int SendConfig(unsigned char *config, int len);
-	int SetBasicProperties();
+	virtual int SetBasicProperties();
 	int GetFirmwareProps(const char *deviceName, char *props_buf, int len);
 	int GetFd();
 	unsigned char *GetProductID() { return m_pid; }
@@ -61,12 +68,6 @@ public:
 
 private:
 	int m_fd;
-	unsigned char m_pid[8];
-	unsigned char m_vid[4];
-	unsigned char m_sensorID;
-	unsigned int m_configID;
-	int m_firmwareVersionMajor;
-	int m_firmwareVersionMinor;
 
 	int ReadPkg(unsigned int addr, unsigned char *buf, unsigned int len);
 	int GetReport(unsigned char *buf);

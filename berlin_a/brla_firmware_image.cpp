@@ -199,3 +199,10 @@ int BrlAFirmwareImage::ParseFirmware()
 
 	return 0;
 }
+
+updateFlag BrlAFirmwareImage::GetUpdateFlag()
+{
+	if (hasConfig)
+		return (updateFlag)(m_firmwareData[m_firmwareSize + 2]);
+	return NO_NEED_UPDATE;
+}

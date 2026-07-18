@@ -48,6 +48,11 @@ int BrlAUpdate::Run(void *para)
 	// get all parameter
 	pGTUpdatePara parameter = (pGTUpdatePara)para;
 
+	if (image->HasConfig())
+		this->mUpdateFlag = image->GetUpdateFlag();
+	else
+		this->mUpdateFlag = NEED_UPDATE_FW;
+
 	if (!parameter->force) {
 		ret = check_update();
 		if (ret < 0) {
@@ -189,6 +194,8 @@ int BrlAUpdate::flashSubSystem(struct fw_subsys_info_a *subsys)
 			return ret;
 		}
 
+		usleep(20000);
+
 		/* send checksum */
 		for (i = 0, checksum = 0; i < data_size; i += 2) {
 			checksum +=
@@ -271,7 +278,8 @@ int BrlAUpdate::fw_update(unsigned int firmware_flag)
 
 	for (i = 1; i < fw_info->subsys_num; i++) {
 		fw_x = &fw_info->subsys[i];
-		if (fw_x->type == (uint8_t)firmware_flag) {
+		if ((fw_x->type == (uint8_t)firmware_flag) &&
+				!(this->mUpdateFlag & NEED_UPDATE_HID_SUBSYSTEM)) {
 			gdix_info("skip type[%02X] subsystem[%d]\n", fw_x->type, i);
 			continue;
 		}
@@ -291,7 +299,7 @@ int BrlAUpdate::fw_update(unsigned int firmware_flag)
 		gdix_err("Failed reset IC\n");
 		return ret;
 	}
-	usleep(100000);
+	usleep(200000);
 
 	/* compare version */
 	dev->SetBasicProperties();

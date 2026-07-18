@@ -42,6 +42,7 @@ protected:
 private:
 	int prepareUpdate();
 	int flashSubSystem(struct fw_subsys_info_a *subsys);
+	int mUpdateFlag;
 };
 
 #endif

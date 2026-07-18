@@ -75,6 +75,7 @@ public:
 	unsigned char *GetProductID() { return m_firmwarePID; }
 	unsigned char *GetVendorID() { return m_firmwareVID; }
 	unsigned int GetConfigID() { return m_firmwareCfgID; }
+	updateFlag GetUpdateFlag();
 
 protected:
 	int GetDataFromFile(const char *filename);

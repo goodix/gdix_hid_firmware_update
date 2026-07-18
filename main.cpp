@@ -57,10 +57,13 @@
 #include "berlin_a/brla.h"
 #include "berlin_a/brla_firmware_image.h"
 #include "berlin_a/brla_update.h"
+#include "marsei/marsei.h"
+#include "marsei/marsei_firmware_image.h"
+#include "marsei/marsei_update.h"
 
 #define GTPUPDATE_GETOPTS "hfd:pvt:s:ima:"
 
-#define VERSION "1.7.9"
+#define VERSION "1.8.0"
 
 enum IC_TYPE {
 	TYPE_PHOENIX,
@@ -70,6 +73,7 @@ enum IC_TYPE {
 	TYPE_YELLOWSTONE,
 	TYPE_BERLINA,
 	TYPE_BERLINB,
+	TYPE_MARSEILLE
 };
 
 bool pdebug = false;
@@ -135,6 +139,7 @@ int main(int argc, char **argv)
 	regex_t reg_x9xx;
 	regex_t reg_7868;
 	regex_t reg_brla;
+	regex_t reg_marse;
 	regmatch_t pamtch[1]; // match container
 
 	char *deviceName = NULL;
@@ -270,6 +275,14 @@ int main(int argc, char **argv)
 		}
 		regfree(&reg_pid);
 
+		regcomp(&reg_pid, "^0[dD][aA]3$",
+				REG_EXTENDED); // 0DA3
+		if (REG_NOERROR == regexec(&reg_pid, pid, 1, pamtch, 0)) {
+			gdix_dbg("pid match GT7863 pid 0DA3\n");
+			chipType = TYPE_NORMANDYL;
+		}
+		regfree(&reg_pid);
+
 		/* 0EB* 0EC* is BerlinB */
 		regcomp(&reg_pid, "^0[eE][bBcC][0-9A-Fa-f]$", REG_EXTENDED);
 		if (REG_NOERROR == regexec(&reg_pid, pid, 1, pamtch, 0)) {
@@ -300,15 +313,16 @@ int main(int argc, char **argv)
 			gdix_dbg("pid match BerlinA pid 0F60~0F7F\n");
 			chipType = TYPE_BERLINA;
 		}
-		regfree(&reg_pid);		
+		regfree(&reg_pid);
 	} else if (productionTypeName != NULL) {
 		regcomp(&reg_x3xx, "^[0-9]3[0-9]{2}", REG_EXTENDED);
 		regcomp(&reg_x5xx, "^[0-9]5[0-9]{2}", REG_EXTENDED);
 		regcomp(&reg_x2xx, "^[0-9]2[0-9]{2}", REG_EXTENDED);
-		regcomp(&reg_x8xx, "^[0-9]8[0-9]{2}", REG_EXTENDED);
+		regcomp(&reg_x8xx, "^7863", REG_EXTENDED);
 		regcomp(&reg_x9xx, "^[0-9]9[0-9]{2}", REG_EXTENDED);
 		regcomp(&reg_7868, "^7868", REG_EXTENDED);
 		regcomp(&reg_brla, "^7726", REG_EXTENDED);
+		regcomp(&reg_marse, "^786(4|6|7)", REG_EXTENDED);
 
 		if (REG_NOERROR == regexec(&reg_x3xx, productionTypeName, 1, pamtch, 0))
 			chipType = TYPE_PHOENIX; // 7388 match
@@ -330,6 +344,9 @@ int main(int argc, char **argv)
 		else if (REG_NOERROR ==
 				 regexec(&reg_brla, productionTypeName, 1, pamtch, 0))
 			chipType = TYPE_BERLINA; // 7726 match
+		else if (REG_NOERROR ==
+				regexec(&reg_marse, productionTypeName, 1, pamtch, 0))
+			chipType = TYPE_MARSEILLE;
 		else
 			chipType = -1; // no match
 
@@ -340,6 +357,7 @@ int main(int argc, char **argv)
 		regfree(&reg_x9xx);
 		regfree(&reg_7868);
 		regfree(&reg_brla);
+		regfree(&reg_marse);
 	}
 
 	if (chipType < 0) {
@@ -388,6 +406,10 @@ int main(int argc, char **argv)
 		gt_model = new BrlADevice;
 		fw_image = new BrlAFirmwareImage;
 		gt_update = new BrlAUpdate;
+	} else if (chipType == TYPE_MARSEILLE) {
+		gt_model = new MarseiDevice;
+		fw_image = new MarseiFirmwareImage;
+		gt_update = new MarseiUpdate;
 	} else {
 		if (pid != NULL)
 			gdix_err("unsupported pid number:%s\n", pid);

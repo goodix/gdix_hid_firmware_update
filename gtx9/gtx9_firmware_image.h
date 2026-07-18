@@ -75,22 +75,23 @@ class GTX9FirmwareImage : public FirmwareImage
 public:
 	GTX9FirmwareImage();
 
+	unsigned char m_firmwarePID[8];
+	unsigned char m_firmwareVID[4];
+	unsigned int m_firmwareCfgID;
+	struct firmware_summary m_firmwareSummary;
+
 	int Initialize(const char *filename);
 	void *GetFirmwareSummary() { return &m_firmwareSummary; }
 	unsigned char *GetProductID() { return m_firmwarePID; }
 	unsigned char *GetVendorID() { return m_firmwareVID; }
 	unsigned int GetConfigID() { return m_firmwareCfgID; }
+	updateFlag GetUpdateFlag();
 
 protected:
 	int GetDataFromFile(const char *filename);
 
 private:
 	int ParseFirmware();
-
-	unsigned char m_firmwarePID[8];
-	unsigned char m_firmwareVID[4];
-	unsigned int m_firmwareCfgID;
-	struct firmware_summary m_firmwareSummary;
 };
 
 #endif
