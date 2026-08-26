@@ -1,7 +1,7 @@
 CXX ?= g++
 # CXX := /home/public/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-g++
 
-CPPFLAGS += -Wall -O3 -fno-strict-aliasing
+CXXFLAGS += -Wall -O3 -fno-strict-aliasing
 CPPFLAGS += -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE
 
 UPDATESRC := $(wildcard *.cpp) \
@@ -24,7 +24,7 @@ PROGNAME = gdixupdate
 all: $(PROGNAME)
 
 $(PROGNAME): $(UPDATEOBJ)
-	$(CXX) $(LDFLAGS) $(UPDATEOBJ) -o $(PROGNAME)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(UPDATEOBJ) -o $(PROGNAME)
 
 clean:
 	rm -f $(UPDATEOBJ) $(PROGNAME)
