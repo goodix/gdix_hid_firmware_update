@@ -3,6 +3,7 @@
 #include "marsei_firmware_image.h"
 #include "../gtp_util.h"
 
+#include <errno.h>
 #include <unistd.h>
 
 int MarseiUpdate::DisableReport()
